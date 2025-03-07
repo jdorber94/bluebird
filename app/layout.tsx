@@ -1,8 +1,7 @@
-import '../styles/globals.css';
-import { Inter } from 'next/font/google';
-import type { Metadata } from 'next';
+"use client";
 
-const inter = Inter({ subsets: ['latin'] });
+import '../styles/globals.css';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'ShowRate Manager',
@@ -16,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         {children}
       </body>
     </html>
