@@ -1,6 +1,6 @@
 import DemoTable from '@/components/DemoTable';
 import StatsCards from '@/components/StatsCards';
-import ConnectGoogleCalendar from '@/components/ConnectGoogleCalendar';
+import AddDemoForm from '@/components/AddDemoForm';
 import Navigation from '@/components/Navigation';
 import { Suspense } from 'react';
 
@@ -51,7 +51,7 @@ export default function Dashboard() {
             </div>
             
             <div>
-              <ConnectGoogleCalendar />
+              <AddDemoForm onDemoAdded={() => {}} />
             </div>
           </div>
         </div>

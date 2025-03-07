@@ -1,6 +1,83 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
+interface Stats {
+  totalDemos: number;
+  showRate: number;
+  noShowRate: number;
+  rebookedDemos: number;
+}
 
 const StatsCards = () => {
+  const [stats, setStats] = useState<Stats>({
+    totalDemos: 0,
+    showRate: 0,
+    noShowRate: 0,
+    rebookedDemos: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setError('You must be logged in to view stats');
+          setLoading(false);
+          return;
+        }
+
+        // Get all demos for the current user
+        const { data, error } = await supabase
+          .from('demos')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // Calculate stats
+        const totalDemos = data.length;
+        const showedDemos = data.filter(demo => demo.status === 'Showed').length;
+        const noShowDemos = data.filter(demo => demo.status === "Didn't Show").length;
+        const rebookedDemos = data.filter(demo => demo.status === 'Rebook').length;
+
+        const showRate = totalDemos > 0 ? (showedDemos / totalDemos) * 100 : 0;
+        const noShowRate = totalDemos > 0 ? (noShowDemos / totalDemos) * 100 : 0;
+
+        setStats({
+          totalDemos,
+          showRate,
+          noShowRate,
+          rebookedDemos,
+        });
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        setError('Failed to load stats');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center py-4">Loading stats...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-4 text-red-600">{error}</div>;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {/* Show Rate Card */}
@@ -19,7 +96,7 @@ const StatsCards = () => {
                 </dt>
                 <dd>
                   <div className="text-lg font-medium text-gray-900">
-                    75%
+                    {stats.showRate.toFixed(1)}%
                   </div>
                 </dd>
               </dl>
@@ -51,7 +128,7 @@ const StatsCards = () => {
                 </dt>
                 <dd>
                   <div className="text-lg font-medium text-gray-900">
-                    25%
+                    {stats.noShowRate.toFixed(1)}%
                   </div>
                 </dd>
               </dl>
@@ -83,7 +160,7 @@ const StatsCards = () => {
                 </dt>
                 <dd>
                   <div className="text-lg font-medium text-gray-900">
-                    12
+                    {stats.rebookedDemos}
                   </div>
                 </dd>
               </dl>
