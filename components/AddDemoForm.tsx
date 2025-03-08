@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,7 @@ const AddDemoForm: React.FC<AddDemoFormProps> = ({ onDemoAdded }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
     dateBooked: new Date().toISOString().split('T')[0],
@@ -23,6 +24,15 @@ const AddDemoForm: React.FC<AddDemoFormProps> = ({ onDemoAdded }) => {
     description: '',
     location: '',
   });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+    
+    checkAuth();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -103,10 +113,16 @@ const AddDemoForm: React.FC<AddDemoFormProps> = ({ onDemoAdded }) => {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <p className="text-center text-gray-500">Please sign in to add demos.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Add New Demo</h2>
-      
+    <div className="bg-white rounded-lg">
       {error && (
         <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
           {error}

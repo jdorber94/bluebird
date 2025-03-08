@@ -20,6 +20,7 @@ const DemoTable = () => {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const fetchDemos = async () => {
     setLoading(true);
@@ -30,8 +31,11 @@ const DemoTable = () => {
       if (!user) {
         setError('You must be logged in to view demos');
         setLoading(false);
+        setIsAuthenticated(false);
         return;
       }
+
+      setIsAuthenticated(true);
 
       const { data, error } = await supabase
         .from('demos')
@@ -104,6 +108,14 @@ const DemoTable = () => {
     return <div className="text-center py-4 text-red-600">{error}</div>;
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-8 bg-white rounded-lg shadow">
+        <p className="text-gray-500">Please sign in to view and manage demos.</p>
+      </div>
+    );
+  }
+
   if (demos.length === 0) {
     return (
       <div className="text-center py-8 bg-white rounded-lg shadow">
@@ -112,93 +124,110 @@ const DemoTable = () => {
     );
   }
 
+  // Helper function to format status display
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'Showed':
+        return <span className="text-green-500 font-medium">Yes</span>;
+      case "Didn't Show":
+        return <span className="text-red-500 font-medium">No</span>;
+      default:
+        return <span className="text-amber-500 font-medium">Pending</span>;
+    }
+  };
+
   return (
-    <div className="flex flex-col">
-      <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Company
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date Booked
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date of Demo
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email Reminder
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone Reminder
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Edit</span>
-                  </th>
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date Booked
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Demo Date
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Demo Time
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email Sent
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Call Made
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Showed
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {demos.map((demo) => {
+              const demoDate = new Date(demo.date_of_demo);
+              return (
+                <tr key={demo.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{demo.company_name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {new Date(demo.date_booked).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {demoDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {demoDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      checked={demo.email_reminder}
+                      onChange={(e) => handleReminderChange(demo.id, 'email_reminder', e.target.checked)}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      checked={demo.phone_reminder}
+                      onChange={(e) => handleReminderChange(demo.id, 'phone_reminder', e.target.checked)}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <select
+                      className="block w-full pl-3 pr-10 py-1 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                      value={demo.status}
+                      onChange={(e) => handleStatusChange(demo.id, e.target.value)}
+                    >
+                      <option value="Scheduled">Pending</option>
+                      <option value="Showed">Yes</option>
+                      <option value="Didn't Show">No</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button className="text-blue-600 hover:text-blue-900">
+                      Edit
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {demos.map((demo) => (
-                  <tr key={demo.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{demo.company_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(demo.date_booked).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(demo.date_of_demo).toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={demo.email_reminder}
-                        onChange={(e) => handleReminderChange(demo.id, 'email_reminder', e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={demo.phone_reminder}
-                        onChange={(e) => handleReminderChange(demo.id, 'phone_reminder', e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                        value={demo.status}
-                        onChange={(e) => handleStatusChange(demo.id, e.target.value)}
-                      >
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Showed">Showed</option>
-                        <option value="Didn't Show">Didn't Show</option>
-                        <option value="Rebook">Rebook</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a href="#" className="text-blue-600 hover:text-blue-900">
-                        Edit
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
