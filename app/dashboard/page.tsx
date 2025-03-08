@@ -88,19 +88,32 @@ export default function Dashboard() {
   };
 
   const handleShowedChange = async (id: number) => {
-    const demo = demos.find(d => d.id === id);
-    if (!demo) return;
+    // Find the demo and update it locally first
+    const demoIndex = demos.findIndex(d => d.id === id);
+    if (demoIndex === -1) return;
 
     const states: ('Yes' | 'No' | 'Pending')[] = ['Yes', 'No', 'Pending'];
-    const currentIndex = states.indexOf(demo.showed);
+    const currentIndex = states.indexOf(demos[demoIndex].showed);
     const nextIndex = (currentIndex + 1) % states.length;
-    
+
+    // Create a new array with the updated demo
+    const updatedDemos = [...demos];
+    updatedDemos[demoIndex] = {
+      ...updatedDemos[demoIndex],
+      showed: states[nextIndex]
+    };
+
+    // Update the state immediately
+    setDemos(updatedDemos);
+
+    // Then update the database
     const { error } = await updateDemo(id, { showed: states[nextIndex] });
     if (error) {
       console.error('Error updating demo:', error);
+      // Revert the change if there was an error
+      setDemos(demos);
       return;
     }
-    await loadDemos();
   };
 
   const handleAddDemo = async () => {
