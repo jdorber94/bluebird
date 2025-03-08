@@ -245,33 +245,43 @@ export default function Dashboard() {
                           {demo.showed}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                        <div className="relative">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="relative inline-block text-left">
                           <button 
+                            type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               setActiveMenu(activeMenu === demo.id ? null : demo.id);
                             }}
-                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                            className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none"
                           >
-                            •••
+                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                            </svg>
                           </button>
                           {activeMenu === demo.id && (
                             <div 
-                              className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100"
-                              onClick={(e) => e.stopPropagation()}
+                              className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-50"
+                              role="menu"
+                              aria-orientation="vertical"
+                              aria-labelledby="options-menu"
                             >
-                              <div className="py-1">
+                              <div className="py-1" role="none">
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     handleDeleteDemo(demo.id);
                                     setActiveMenu(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:bg-red-50"
+                                  className="group flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                  role="menuitem"
                                 >
+                                  <svg className="mr-3 h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
                                   Delete Demo
                                 </button>
                               </div>
