@@ -78,7 +78,14 @@ export default function Dashboard() {
         setDemos([]);
       } else {
         setError(null);
-        setDemos(data || []);
+        // Sort demos by demo_date, with earliest dates first
+        const sortedDemos = (data || []).sort((a, b) => {
+          // Handle null dates by putting them at the end
+          if (!a.demo_date) return 1;
+          if (!b.demo_date) return -1;
+          return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
+        });
+        setDemos(sortedDemos);
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
@@ -160,13 +167,14 @@ export default function Dashboard() {
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
     
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    // Format as ISO string for timestamp with timezone
+    const formatDateTime = (date: Date) => date.toISOString();
 
     const newDemo = {
       name: 'New Demo',
-      date_booked: formatDate(now),
-      demo_date: formatDate(nextWeek),
-      demo_time: '09:00',
+      date_booked: formatDateTime(now),
+      demo_date: formatDateTime(nextWeek),
+      demo_time: '09:00:00', // Format time as HH:MM:SS
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const
@@ -180,7 +188,15 @@ export default function Dashboard() {
         return;
       }
       if (data) {
-        setDemos(prevDemos => [...prevDemos, data]);
+        // Add new demo and resort the list
+        setDemos(prevDemos => {
+          const updatedDemos = [...prevDemos, data];
+          return updatedDemos.sort((a, b) => {
+            if (!a.demo_date) return 1;
+            if (!b.demo_date) return -1;
+            return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
+          });
+        });
       }
     } catch (err) {
       console.error('Error creating demo:', err);
@@ -204,13 +220,6 @@ export default function Dashboard() {
     }
   };
 
-  const reorderDemos = (startIndex: number, endIndex: number) => {
-    const result = Array.from(demos);
-    const [removed] = result.splice(startIndex, 1);
-    result.splice(endIndex, 0, removed);
-    return result;
-  };
-
   const onDragEnd = async (result: DropResult) => {
     // Dropped outside the list
     if (!result.destination) {
@@ -222,24 +231,20 @@ export default function Dashboard() {
       return;
     }
 
-    const reorderedDemos = reorderDemos(
-      result.source.index,
-      result.destination.index
-    );
+    // Instead of allowing manual reordering, we'll resort by date
+    const movedDemo = demos[result.source.index];
+    const targetDate = demos[result.destination.index].demo_date;
 
-    // Update state immediately
-    setDemos(reorderedDemos);
-
-    // Update positions in the database
-    try {
-      // Update each demo's position
-      await Promise.all(reorderedDemos.map((demo, index) => 
-        updateDemo(demo.id, { position: index })
-      ));
-    } catch (error) {
-      console.error('Error updating positions:', error);
-      // Optionally revert to original order if there's an error
-      setDemos(demos);
+    // Update the demo's date to be the same as the target position's date
+    if (movedDemo && targetDate) {
+      try {
+        await updateDemo(movedDemo.id, { demo_date: targetDate });
+        
+        // Reload demos to get the proper sort order
+        await loadDemos();
+      } catch (error) {
+        console.error('Error updating demo date:', error);
+      }
     }
   };
 

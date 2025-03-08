@@ -24,10 +24,14 @@ export default function EditableCell({ value, onChange, type = 'text', className
   const formatDisplayValue = (val: string) => {
     if (type === 'date') {
       try {
-        return new Date(val).toLocaleDateString('en-US', {
+        const date = new Date(val);
+        if (isNaN(date.getTime())) return val;
+        
+        return date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
-          day: 'numeric'
+          day: 'numeric',
+          timeZone: 'UTC' // Use UTC to avoid timezone shifts
         });
       } catch (e) {
         return val;
@@ -35,7 +39,12 @@ export default function EditableCell({ value, onChange, type = 'text', className
     }
     if (type === 'time') {
       try {
-        return new Date(`2000-01-01T${val}`).toLocaleTimeString('en-US', {
+        // Handle both full timestamps and time-only strings
+        const timeString = val.includes('T') ? val.split('T')[1] : val;
+        const date = new Date(`2000-01-01T${timeString}`);
+        if (isNaN(date.getTime())) return val;
+
+        return date.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true
@@ -50,7 +59,24 @@ export default function EditableCell({ value, onChange, type = 'text', className
   const handleBlur = () => {
     setIsEditing(false);
     if (editValue !== value) {
-      if (type === 'time') {
+      if (type === 'date') {
+        // Ensure we preserve the time portion when updating the date
+        try {
+          const newDate = new Date(editValue);
+          const oldDate = new Date(value);
+          
+          // If the old value had a time, preserve it
+          if (!isNaN(oldDate.getTime())) {
+            newDate.setUTCHours(oldDate.getUTCHours());
+            newDate.setUTCMinutes(oldDate.getUTCMinutes());
+            newDate.setUTCSeconds(oldDate.getUTCSeconds());
+          }
+          
+          onChange(newDate.toISOString());
+        } catch (e) {
+          onChange(editValue);
+        }
+      } else if (type === 'time') {
         // Round to nearest 15 minutes
         try {
           const [hours, minutes] = editValue.split(':');
@@ -58,8 +84,7 @@ export default function EditableCell({ value, onChange, type = 'text', className
           date.setHours(parseInt(hours));
           date.setMinutes(Math.round(parseInt(minutes) / 15) * 15);
           date.setSeconds(0);
-          const roundedTime = date.toTimeString().split(' ')[0];
-          onChange(roundedTime);
+          onChange(date.toTimeString().split(' ')[0]);
         } catch (e) {
           onChange(editValue);
         }
