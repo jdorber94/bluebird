@@ -52,6 +52,7 @@ export const getDemos = async () => {
       .from('demos')
       .select('*')
       .eq('user_id', user.id)
+      .order('position', { ascending: true })
       .order('created_at', { ascending: false });
     
     if (error) {

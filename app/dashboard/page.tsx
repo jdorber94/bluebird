@@ -204,8 +204,8 @@ export default function Dashboard() {
     }
   };
 
-  const reorderDemos = (startIndex: number, endIndex: number) => {
-    const result = Array.from(demos);
+  const reorderDemos = (list: Demo[], startIndex: number, endIndex: number) => {
+    const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
     result.splice(endIndex, 0, removed);
     return result;
@@ -223,22 +223,22 @@ export default function Dashboard() {
     }
 
     const reorderedDemos = reorderDemos(
+      demos,
       result.source.index,
       result.destination.index
     );
 
-    // Update state immediately
+    // Update state immediately for smooth UI
     setDemos(reorderedDemos);
 
-    // Update positions in the database
     try {
-      // Update each demo's position
+      // Update positions in the database
       await Promise.all(reorderedDemos.map((demo, index) => 
         updateDemo(demo.id, { position: index })
       ));
     } catch (error) {
       console.error('Error updating positions:', error);
-      // Optionally revert to original order if there's an error
+      // Revert to original order if there's an error
       setDemos(demos);
     }
   };
@@ -319,11 +319,16 @@ export default function Dashboard() {
                               <tr
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`${snapshot.isDragging ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150`}
+                                className={`${snapshot.isDragging ? 'bg-blue-50 shadow-lg' : 'hover:bg-gray-50'} transition-colors duration-150`}
                               >
-                                <td className="w-10 px-2">
-                                  <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600 text-center">
-                                    ⋮⋮
+                                <td className="w-10 px-2 py-4">
+                                  <div 
+                                    {...provided.dragHandleProps} 
+                                    className="flex justify-center items-center h-6 cursor-move text-gray-400 hover:text-gray-600 transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 15h8" />
+                                    </svg>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
