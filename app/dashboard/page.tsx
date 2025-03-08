@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from 'react';
+import EditableCell from '../components/EditableCell';
 
 interface Demo {
+  id: number;
   name: string;
   dateBooked: string;
   demoDate: string;
@@ -15,6 +17,7 @@ interface Demo {
 export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([
     {
+      id: 1,
       name: 'John Smith',
       dateBooked: 'Nov 1, 2023',
       demoDate: 'Nov 10, 2023',
@@ -24,6 +27,7 @@ export default function Dashboard() {
       showed: 'Yes'
     },
     {
+      id: 2,
       name: 'Sarah Johnson',
       dateBooked: 'Nov 2, 2023',
       demoDate: 'Nov 12, 2023',
@@ -33,6 +37,7 @@ export default function Dashboard() {
       showed: 'No'
     },
     {
+      id: 3,
       name: 'Michael Brown',
       dateBooked: 'Nov 3, 2023',
       demoDate: 'Nov 15, 2023',
@@ -42,6 +47,7 @@ export default function Dashboard() {
       showed: 'Pending'
     },
     {
+      id: 4,
       name: 'Emily Davis',
       dateBooked: 'Nov 5, 2023',
       demoDate: 'Nov 18, 2023',
@@ -51,6 +57,7 @@ export default function Dashboard() {
       showed: 'Yes'
     },
     {
+      id: 5,
       name: 'Robert Wilson',
       dateBooked: 'Nov 7, 2023',
       demoDate: 'Nov 20, 2023',
@@ -60,6 +67,30 @@ export default function Dashboard() {
       showed: 'Pending'
     }
   ]);
+
+  const handleUpdate = (id: number, field: keyof Demo, value: any) => {
+    setDemos(demos.map(demo => 
+      demo.id === id ? { ...demo, [field]: value } : demo
+    ));
+  };
+
+  const handleCheckboxChange = (id: number, field: 'emailSent' | 'callMade') => {
+    setDemos(demos.map(demo =>
+      demo.id === id ? { ...demo, [field]: !demo[field] } : demo
+    ));
+  };
+
+  const handleShowedChange = (id: number) => {
+    setDemos(demos.map(demo => {
+      if (demo.id === id) {
+        const states: ('Yes' | 'No' | 'Pending')[] = ['Yes', 'No', 'Pending'];
+        const currentIndex = states.indexOf(demo.showed);
+        const nextIndex = (currentIndex + 1) % states.length;
+        return { ...demo, showed: states[nextIndex] };
+      }
+      return demo;
+    }));
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -121,36 +152,62 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {demos.map((demo, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demo.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.dateBooked}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.demoDate}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.demoTime}</td>
+                {demos.map((demo) => (
+                  <tr key={demo.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <EditableCell
+                        value={demo.name}
+                        onChange={(value) => handleUpdate(demo.id, 'name', value)}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <EditableCell
+                        value={demo.dateBooked}
+                        onChange={(value) => handleUpdate(demo.id, 'dateBooked', value)}
+                        type="date"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <EditableCell
+                        value={demo.demoDate}
+                        onChange={(value) => handleUpdate(demo.id, 'demoDate', value)}
+                        type="date"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <EditableCell
+                        value={demo.demoTime}
+                        onChange={(value) => handleUpdate(demo.id, 'demoTime', value)}
+                        type="time"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <input 
                         type="checkbox" 
                         checked={demo.emailSent}
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                        onChange={() => {}}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                        onChange={() => handleCheckboxChange(demo.id, 'emailSent')}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <input 
                         type="checkbox" 
                         checked={demo.callMade}
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                        onChange={() => {}}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                        onChange={() => handleCheckboxChange(demo.id, 'callMade')}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        demo.showed === 'Yes' ? 'bg-green-100 text-green-800' :
-                        demo.showed === 'No' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <button
+                        onClick={() => handleShowedChange(demo.id)}
+                        className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
+                          demo.showed === 'Yes' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                          demo.showed === 'No' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                          'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                        }`}
+                      >
                         {demo.showed}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button className="text-gray-400 hover:text-gray-600">•••</button>
