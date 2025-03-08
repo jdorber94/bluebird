@@ -1,10 +1,19 @@
+"use client";
+
 import DemoTable from '@/components/DemoTable';
 import StatsCards from '@/components/StatsCards';
 import AddDemoForm from '@/components/AddDemoForm';
 import Navigation from '@/components/Navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 
 export default function Dashboard() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  const handleDemoAdded = () => {
+    // Increment the refresh key to trigger a re-render of components
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -28,7 +37,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Suspense fallback={<div>Loading stats...</div>}>
-            <StatsCards />
+            <StatsCards key={`stats-${refreshKey}`} />
           </Suspense>
           
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -46,12 +55,12 @@ export default function Dashboard() {
               </div>
               
               <Suspense fallback={<div>Loading demos...</div>}>
-                <DemoTable />
+                <DemoTable key={`demos-${refreshKey}`} />
               </Suspense>
             </div>
             
             <div>
-              <AddDemoForm onDemoAdded={() => {}} />
+              <AddDemoForm onDemoAdded={handleDemoAdded} />
             </div>
           </div>
         </div>

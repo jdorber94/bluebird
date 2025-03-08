@@ -21,36 +21,38 @@ const DemoTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchDemos = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setError('You must be logged in to view demos');
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('demos')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date_of_demo', { ascending: true });
-
-        if (error) {
-          throw error;
-        }
-
-        setDemos(data || []);
-      } catch (err) {
-        console.error('Error fetching demos:', err);
-        setError('Failed to load demos');
-      } finally {
+  const fetchDemos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setError('You must be logged in to view demos');
         setLoading(false);
+        return;
       }
-    };
 
+      const { data, error } = await supabase
+        .from('demos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date_of_demo', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setDemos(data || []);
+    } catch (err) {
+      console.error('Error fetching demos:', err);
+      setError('Failed to load demos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDemos();
   }, []);
 
