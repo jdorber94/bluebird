@@ -1,120 +1,167 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { supabase } from '@/lib/supabase';
-import DemoTable from '@/components/DemoTable';
-import StatsCards from '@/components/StatsCards';
-import AddDemoForm from '@/components/AddDemoForm';
-import Navigation from '@/components/Navigation';
+import { useState } from 'react';
+
+interface Demo {
+  name: string;
+  dateBooked: string;
+  demoDate: string;
+  demoTime: string;
+  emailSent: boolean;
+  callMade: boolean;
+  showed: 'Yes' | 'No' | 'Pending';
+}
 
 export default function Dashboard() {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [showAddDemoModal, setShowAddDemoModal] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-      setUser(user);
-    };
-    
-    checkAuth();
-  }, []);
-  
-  const handleDemoAdded = () => {
-    // Increment the refresh key to trigger a re-render of components
-    setRefreshKey(prev => prev + 1);
-    setShowAddDemoModal(false);
-  };
+  const [demos, setDemos] = useState<Demo[]>([
+    {
+      name: 'John Smith',
+      dateBooked: 'Nov 1, 2023',
+      demoDate: 'Nov 10, 2023',
+      demoTime: '10:00 AM',
+      emailSent: true,
+      callMade: false,
+      showed: 'Yes'
+    },
+    {
+      name: 'Sarah Johnson',
+      dateBooked: 'Nov 2, 2023',
+      demoDate: 'Nov 12, 2023',
+      demoTime: '2:30 PM',
+      emailSent: true,
+      callMade: true,
+      showed: 'No'
+    },
+    {
+      name: 'Michael Brown',
+      dateBooked: 'Nov 3, 2023',
+      demoDate: 'Nov 15, 2023',
+      demoTime: '11:15 AM',
+      emailSent: false,
+      callMade: false,
+      showed: 'Pending'
+    },
+    {
+      name: 'Emily Davis',
+      dateBooked: 'Nov 5, 2023',
+      demoDate: 'Nov 18, 2023',
+      demoTime: '3:00 PM',
+      emailSent: true,
+      callMade: true,
+      showed: 'Yes'
+    },
+    {
+      name: 'Robert Wilson',
+      dateBooked: 'Nov 7, 2023',
+      demoDate: 'Nov 20, 2023',
+      demoTime: '9:45 AM',
+      emailSent: true,
+      callMade: false,
+      showed: 'Pending'
+    }
+  ]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold">Demo Tracker</h1>
-            <div className="flex items-center">
-              {isAuthenticated ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">{user?.email}</span>
-                  <button 
-                    onClick={() => supabase.auth.signOut()}
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => window.location.href = '/login'}
-                  className="text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-gray-200 p-4">
+        <h1 className="text-xl font-semibold mb-8">Bluebird</h1>
+        <nav className="space-y-2">
+          <a href="#" className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md">
+            <span className="mr-3">📊</span>
+            Demo Dashboard
+          </a>
+          <div className="mt-auto pt-8">
+            <a href="#" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+              <span className="mr-3">⚙️</span>
+              Settings
+            </a>
+          </div>
+        </nav>
+        {/* User Profile */}
+        <div className="absolute bottom-4 left-4 flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+          <div>
+            <div className="text-sm font-medium">Yusuf Hilmi</div>
+            <div className="text-xs text-gray-500">Demo Manager</div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Demo Show Rate Tracker</h2>
-            {isAuthenticated && (
-              <button
-                onClick={() => setShowAddDemoModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-semibold">Demo Show Rate Tracker</h2>
+            <div className="flex items-center space-x-4">
+              <button className="flex items-center px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md">
+                <span className="mr-2">🔍</span>
+                Filter
+              </button>
+              <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                <span className="mr-2">+</span>
                 Add Demo
               </button>
-            )}
-          </div>
-          
-          <Suspense fallback={<div>Loading demos...</div>}>
-            <DemoTable key={`demos-${refreshKey}`} />
-          </Suspense>
-        </div>
-      </main>
-
-      {/* Add Demo Modal */}
-      {showAddDemoModal && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Demo</h3>
-                      <button
-                        onClick={() => setShowAddDemoModal(false)}
-                        className="text-gray-400 hover:text-gray-500"
-                      >
-                        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    <AddDemoForm onDemoAdded={handleDemoAdded} />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+
+          {/* Demo Table */}
+          <div className="bg-white rounded-lg shadow">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {demos.map((demo, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demo.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.dateBooked}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.demoDate}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demo.demoTime}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <input 
+                        type="checkbox" 
+                        checked={demo.emailSent}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                        onChange={() => {}}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <input 
+                        type="checkbox" 
+                        checked={demo.callMade}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                        onChange={() => {}}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        demo.showed === 'Yes' ? 'bg-green-100 text-green-800' :
+                        demo.showed === 'No' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {demo.showed}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <button className="text-gray-400 hover:text-gray-600">•••</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 } 
