@@ -52,12 +52,28 @@ export default function Dashboard() {
   };
 
   const handleUpdate = async (id: number, field: keyof Demo, value: any) => {
+    // Find the demo and update it locally first
+    const demoIndex = demos.findIndex(d => d.id === id);
+    if (demoIndex === -1) return;
+
+    // Create a new array with the updated demo
+    const updatedDemos = [...demos];
+    updatedDemos[demoIndex] = {
+      ...updatedDemos[demoIndex],
+      [field]: value
+    };
+
+    // Update the state immediately
+    setDemos(updatedDemos);
+
+    // Then update the database
     const { error } = await updateDemo(id, { [field]: value });
     if (error) {
       console.error('Error updating demo:', error);
+      // Revert the change if there was an error
+      setDemos(demos);
       return;
     }
-    await loadDemos();
   };
 
   const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: number, field: 'email_sent' | 'call_made') => {
@@ -139,23 +155,41 @@ export default function Dashboard() {
       showed: 'Pending' as const
     };
 
-    const { error } = await createDemo(newDemo);
+    // Add to state immediately with a temporary ID
+    const tempId = Date.now(); // Use timestamp as temporary ID
+    setDemos([...demos, { ...newDemo, id: tempId }]);
+
+    // Then update the database
+    const { error, data } = await createDemo(newDemo);
     if (error) {
       console.error('Error creating demo:', error);
+      // Remove the temporary demo if there was an error
+      setDemos(demos);
       return;
     }
-    await loadDemos();
+
+    // Update the demo with the real ID from the database
+    if (data) {
+      setDemos(prevDemos => prevDemos.map(demo => 
+        demo.id === tempId ? { ...demo, id: data.id } : demo
+      ));
+    }
   };
 
   const handleDeleteDemo = async (id: number) => {
     if (!confirm('Are you sure you want to delete this demo?')) return;
     
+    // Remove from state immediately
+    setDemos(demos.filter(demo => demo.id !== id));
+
+    // Then update the database
     const { error } = await deleteDemo(id);
     if (error) {
       console.error('Error deleting demo:', error);
+      // Restore the demo if there was an error
+      setDemos(demos);
       return;
     }
-    await loadDemos();
   };
 
   return (
@@ -165,8 +199,7 @@ export default function Dashboard() {
         <h1 className="text-xl font-semibold mb-8">Bluebird</h1>
         <nav className="flex-1 space-y-2">
           <a href="#" className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md">
-            <span className="mr-3">📊</span>
-            Demo Dashboard
+            Dashboard
           </a>
         </nav>
         
@@ -183,8 +216,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-semibold">Demo Show Rate Tracker</h2>
+          <div className="flex justify-end mb-8">
             <div className="flex items-center space-x-4">
               <button className="flex items-center px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md">
                 <span className="mr-2">🔍</span>
@@ -213,7 +245,7 @@ export default function Dashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
