@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface ActionMenuProps {
-  demoId: number;
-  onDelete: (id: number) => void;
+  demoId: string;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
@@ -20,6 +20,16 @@ export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await onDelete(demoId);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error deleting demo:', error);
+    }
+  };
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
@@ -44,11 +54,7 @@ export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
           <div className="py-1">
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(demoId);
-                setIsOpen(false);
-              }}
+              onClick={handleDelete}
               className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
