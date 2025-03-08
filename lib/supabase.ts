@@ -41,31 +41,78 @@ export const getCurrentUser = async () => {
 
 // Demo management functions
 export const getDemos = async () => {
-  const { data, error } = await supabase
-    .from('demos')
-    .select('*')
-    .order('position', { ascending: true });
-  return { data, error };
+  const user = await getCurrentUser();
+  if (!user) {
+    console.error('User not authenticated when trying to get demos');
+    return { data: null, error: new Error('User not authenticated') };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('demos')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('position', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching demos:', error);
+    }
+    
+    return { data, error };
+  } catch (err) {
+    console.error('Unexpected error in getDemos:', err);
+    return { data: null, error: err as Error };
+  }
 };
 
 export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
   const user = await getCurrentUser();
   if (!user) {
+    console.error('User not authenticated when trying to create demo');
     return { data: null, error: new Error('User not authenticated') };
   }
 
-  const { data, error } = await supabase
-    .from('demos')
-    .insert([{
-      ...demo,
-      user_id: user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }])
-    .select()
-    .single();
-  
-  return { data, error };
+  try {
+    // Get the current maximum position
+    const { data: existingDemos, error: fetchError } = await supabase
+      .from('demos')
+      .select('position')
+      .eq('user_id', user.id)
+      .order('position', { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error('Error fetching max position:', fetchError);
+      return { data: null, error: fetchError };
+    }
+
+    const maxPosition = existingDemos && existingDemos.length > 0 ? existingDemos[0].position || 0 : -1;
+    const newPosition = maxPosition + 1;
+
+    // Create the new demo
+    const { data, error } = await supabase
+      .from('demos')
+      .insert([{
+        ...demo,
+        user_id: user.id,
+        position: newPosition,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        email_reminder_sent: false,
+        phone_reminder_sent: false
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating demo:', error);
+    }
+    
+    return { data, error };
+  } catch (err) {
+    console.error('Unexpected error in createDemo:', err);
+    return { data: null, error: err as Error };
+  }
 };
 
 export const updateDemo = async (id: string, updates: DemoUpdate) => {

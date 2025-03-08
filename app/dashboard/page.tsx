@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import EditableCell from '../components/EditableCell';
 import ActionMenu from '../components/ActionMenu';
 import ProfileMenu from '../components/ProfileMenu';
-import { getDemos, updateDemo, createDemo, deleteDemo, migrateDemosTable } from '@/lib/supabase';
+import { getDemos, updateDemo, createDemo, deleteDemo, migrateDemosTable, getCurrentUser } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Database } from '@/lib/database.types';
 
@@ -14,6 +14,7 @@ type Demo = Database['public']['Tables']['demos']['Row'];
 export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -30,40 +31,59 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    const checkAuth = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        console.log('User not authenticated, redirecting to login');
+        router.push('/login');
+        return false;
+      }
+      return true;
+    };
+
     const init = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
+        const isAuthenticated = await checkAuth();
+        if (!isAuthenticated) return;
+
         // Run migration first
         const { error: migrationError } = await migrateDemosTable();
         if (migrationError) {
           console.error('Migration error:', migrationError);
           // Continue loading demos even if migration fails
         }
+
+        // Then load demos
+        await loadDemos();
       } catch (err) {
         console.error('Unexpected error during initialization:', err);
+        setError('Failed to initialize the dashboard. Please try refreshing the page.');
+      } finally {
+        setLoading(false);
       }
-      
-      // Then load demos
-      await loadDemos();
     };
     
     init();
-  }, []);
+  }, [router]);
 
   const loadDemos = async () => {
-    setLoading(true);
     try {
       const { data, error } = await getDemos();
       if (error) {
         console.error('Error loading demos:', error);
+        setError('Failed to load demos. Please try refreshing the page.');
         setDemos([]);
       } else {
+        setError(null);
         setDemos(data || []);
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
+      setError('An unexpected error occurred. Please try refreshing the page.');
       setDemos([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -153,12 +173,7 @@ export default function Dashboard() {
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
     
-    const formatDate = (date: Date) => date.toISOString();
-    const defaultTime = '09:00:00';
-
-    // Get the maximum position value
-    const maxPosition = demos.reduce((max, demo) => 
-      demo.position !== null && demo.position > max ? demo.position : max, -1);
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
     const newDemo = {
       company_name: 'New Demo',
@@ -168,13 +183,16 @@ export default function Dashboard() {
       phone_reminder: false,
       status: 'Scheduled',
       email_reminder_sent: false,
-      phone_reminder_sent: false,
-      position: maxPosition + 1
+      phone_reminder_sent: false
     };
 
     try {
       const { data, error } = await createDemo(newDemo);
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating demo:', error);
+        alert('Failed to create demo. Please try again.');
+        return;
+      }
       if (data) {
         setDemos(prevDemos => [...prevDemos, data]);
       }
@@ -283,6 +301,8 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg shadow">
             {loading ? (
               <div className="p-8 text-center text-gray-500">Loading demos...</div>
+            ) : error ? (
+              <div className="p-8 text-center text-red-500">{error}</div>
             ) : demos.length === 0 ? (
               <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
             ) : (
