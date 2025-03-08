@@ -154,7 +154,8 @@ export default function Dashboard() {
       demo_time: defaultTime,
       email_sent: false,
       call_made: false,
-      showed: 'Pending' as const
+      showed: 'Pending' as const,
+      position: demos.length // Add new demos at the end
     };
 
     // Add to state immediately with a temporary ID
