@@ -6,9 +6,10 @@ interface EditableCellProps {
   value: string;
   onChange: (value: string) => void;
   type?: 'text' | 'date' | 'time';
+  className?: string;
 }
 
-export default function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
+export default function EditableCell({ value, onChange, type = 'text', className = '' }: EditableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +97,7 @@ export default function EditableCell({ value, onChange, type = 'text' }: Editabl
   return (
     <div
       onClick={() => setIsEditing(true)}
-      className="cursor-pointer hover:bg-gray-50 px-2 py-1 -mx-2 rounded transition-colors"
+      className={`cursor-pointer hover:bg-gray-50 px-2 py-1 -mx-2 rounded transition-colors ${className}`}
     >
       {formatDisplayValue(value)}
     </div>

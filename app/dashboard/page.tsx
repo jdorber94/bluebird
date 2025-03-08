@@ -124,11 +124,23 @@ export default function Dashboard() {
   const getStatusDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
     switch (showed) {
       case 'Yes':
-        return <span className="text-green-500 font-medium">Yes</span>;
+        return (
+          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full">
+            Yes
+          </span>
+        );
       case 'No':
-        return <span className="text-red-500 font-medium">No</span>;
+        return (
+          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full">
+            No
+          </span>
+        );
       default:
-        return <span className="text-amber-500 font-medium">Pending</span>;
+        return (
+          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+            Pending
+          </span>
+        );
     }
   };
 
@@ -283,14 +295,15 @@ export default function Dashboard() {
               <DragDropContext onDragEnd={onDragEnd}>
                 <table className="min-w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
+                    <tr>
+                      <th className="w-10 px-2"></th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Email Sent</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                     </tr>
                   </thead>
                   <Droppable droppableId="table" direction="vertical">
@@ -306,55 +319,63 @@ export default function Dashboard() {
                               <tr
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`${snapshot.isDragging ? 'bg-blue-50' : ''}`}
+                                className={`${snapshot.isDragging ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150`}
                               >
                                 <td className="w-10 px-2">
-                                  <div {...provided.dragHandleProps} className="cursor-move">
+                                  <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600 text-center">
                                     ⋮⋮
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
                                     value={demo.name || ''}
                                     onChange={(value) => handleUpdate(demo.id, 'name', value)}
+                                    className="text-sm font-medium text-gray-900"
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
                                     value={demo.date_booked || new Date().toISOString().split('T')[0]}
                                     onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
                                     type="date"
+                                    className="text-sm text-gray-500"
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
                                     value={demo.demo_date || new Date().toISOString().split('T')[0]}
                                     onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
                                     type="date"
+                                    className="text-sm text-gray-500"
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input 
                                     type="checkbox" 
                                     checked={demo.email_sent}
-                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                                    className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
                                     onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input 
                                     type="checkbox" 
                                     checked={demo.call_made}
-                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                                    className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
                                     onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {getStatusDisplay(demo.showed)}
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <button
+                                    onClick={() => handleStatusChange(demo.id)}
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                  >
+                                    {getStatusDisplay(demo.showed)}
+                                  </button>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <ActionMenu 
                                     demoId={demo.id}
                                     onDelete={handleDeleteDemo}
