@@ -74,11 +74,19 @@ export default function Dashboard() {
   };
 
   const handleAddDemo = async () => {
+    const now = new Date();
+    const nextWeek = new Date(now);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
+    const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
+
     const newDemo = {
       name: 'New Demo',
-      date_booked: new Date().toISOString(),
-      demo_date: new Date().toISOString(),
-      demo_time: '09:00',
+      date_booked: formatDate(now),
+      demo_date: formatDate(nextWeek),
+      demo_time: '09:00:00',
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const

@@ -1,5 +1,17 @@
 import { createBrowserClient } from '@supabase/ssr';
 
+interface Demo {
+  id: number;
+  name: string;
+  date_booked: string;
+  demo_date: string;
+  demo_time: string;
+  email_sent: boolean;
+  call_made: boolean;
+  showed: 'Yes' | 'No' | 'Pending';
+  user_id?: string;
+}
+
 // Initialize the Supabase client
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,29 +50,50 @@ export const getDemos = async () => {
   const { data, error } = await supabase
     .from('demos')
     .select('*')
-    .order('dateOfDemo', { ascending: true });
+    .order('demo_date', { ascending: true });
   return { data, error };
 };
 
-export const createDemo = async (demo: any) => {
+export const createDemo = async (demo: Omit<Demo, 'id'>) => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { data: null, error: new Error('User not authenticated') };
+  }
+
   const { data, error } = await supabase
     .from('demos')
-    .insert([demo]);
+    .insert([{ ...demo, user_id: user.id }])
+    .select()
+    .single();
   return { data, error };
 };
 
-export const updateDemo = async (id: number, updates: any) => {
+export const updateDemo = async (id: number, updates: Partial<Demo>) => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { data: null, error: new Error('User not authenticated') };
+  }
+
   const { data, error } = await supabase
     .from('demos')
     .update(updates)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select()
+    .single();
   return { data, error };
 };
 
 export const deleteDemo = async (id: number) => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { data: null, error: new Error('User not authenticated') };
+  }
+
   const { data, error } = await supabase
     .from('demos')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', user.id);
   return { data, error };
 }; 
