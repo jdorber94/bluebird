@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { getProfile, updateProfile } from '@/lib/supabase';
 
 interface Profile {
   email: string;
@@ -13,6 +13,8 @@ interface Profile {
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -20,59 +22,60 @@ export default function ProfilePage() {
   }, []);
 
   const loadProfile = async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      console.error('Error loading user:', userError);
-      router.push('/login');
-      return;
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getProfile();
+      setProfile(data);
+    } catch (err: any) {
+      console.error('Error loading profile:', err);
+      setError('Failed to load profile. Please try again.');
+      if (err.message?.includes('auth')) {
+        router.push('/login');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      console.error('Error loading profile:', error);
-      return;
-    }
-
-    setProfile(data);
-    setLoading(false);
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
+    try {
+      setSaving(true);
+      setError(null);
+      const updatedProfile = await updateProfile({
         full_name: profile.full_name,
         role: profile.role,
-      })
-      .eq('id', user.id);
-
-    if (error) {
-      console.error('Error updating profile:', error);
-      return;
+      });
+      setProfile(updatedProfile);
+      alert('Profile updated successfully!');
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      setError('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
-
-    alert('Profile updated successfully!');
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">Profile Settings</h2>
@@ -113,9 +116,17 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={saving}
+                className={`px-4 py-2 ${
+                  saving 
+                    ? 'bg-blue-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center`}
               >
-                Save Changes
+                {saving && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                )}
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>

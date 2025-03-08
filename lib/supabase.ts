@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from './database.types';
+import { createClient } from '@supabase/supabase-js';
 
 interface Demo {
   id: number;
@@ -97,4 +98,37 @@ export const deleteDemo = async (id: number) => {
     .eq('id', id)
     .eq('user_id', user.id);
   return { data, error };
-}; 
+};
+
+// Profile functions
+export async function getProfile() {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw userError;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProfile(updates: {
+  full_name?: string;
+  role?: string;
+}) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw userError;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+} 
