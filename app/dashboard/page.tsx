@@ -78,14 +78,7 @@ export default function Dashboard() {
         setDemos([]);
       } else {
         setError(null);
-        // Sort demos by position if available, otherwise by creation date
-        const sortedDemos = (data || []).sort((a, b) => {
-          if (typeof a.position === 'number' && typeof b.position === 'number') {
-            return a.position - b.position;
-          }
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-        setDemos(sortedDemos);
+        setDemos(data || []);
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
@@ -187,13 +180,7 @@ export default function Dashboard() {
         return;
       }
       if (data) {
-        // Add the new demo to the end of the list
-        setDemos(prevDemos => {
-          const nextPosition = prevDemos.length > 0 
-            ? Math.max(...prevDemos.map(d => d.position)) + 1 
-            : 0;
-          return [...prevDemos, { ...data, position: nextPosition }];
-        });
+        setDemos(prevDemos => [...prevDemos, data]);
       }
     } catch (err) {
       console.error('Error creating demo:', err);
@@ -217,8 +204,8 @@ export default function Dashboard() {
     }
   };
 
-  const reorderDemos = (list: Demo[], startIndex: number, endIndex: number) => {
-    const result = Array.from(list);
+  const reorderDemos = (startIndex: number, endIndex: number) => {
+    const result = Array.from(demos);
     const [removed] = result.splice(startIndex, 1);
     result.splice(endIndex, 0, removed);
     return result;
@@ -236,22 +223,22 @@ export default function Dashboard() {
     }
 
     const reorderedDemos = reorderDemos(
-      demos,
       result.source.index,
       result.destination.index
     );
 
-    // Update state immediately for smooth UI
+    // Update state immediately
     setDemos(reorderedDemos);
 
+    // Update positions in the database
     try {
-      // Update positions in the database
+      // Update each demo's position
       await Promise.all(reorderedDemos.map((demo, index) => 
         updateDemo(demo.id, { position: index })
       ));
     } catch (error) {
       console.error('Error updating positions:', error);
-      // Revert to original order if there's an error
+      // Optionally revert to original order if there's an error
       setDemos(demos);
     }
   };
@@ -332,16 +319,11 @@ export default function Dashboard() {
                               <tr
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`${snapshot.isDragging ? 'bg-blue-50 shadow-lg' : 'hover:bg-gray-50'} transition-colors duration-150`}
+                                className={`${snapshot.isDragging ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150`}
                               >
-                                <td className="w-10 px-2 py-4">
-                                  <div 
-                                    {...provided.dragHandleProps} 
-                                    className="flex justify-center items-center h-6 cursor-move text-gray-400 hover:text-gray-600 transition-colors"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 15h8" />
-                                    </svg>
+                                <td className="w-10 px-2">
+                                  <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600 text-center">
+                                    ⋮⋮
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">

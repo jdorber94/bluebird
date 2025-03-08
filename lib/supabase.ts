@@ -52,7 +52,6 @@ export const getDemos = async () => {
       .from('demos')
       .select('*')
       .eq('user_id', user.id)
-      .order('position', { ascending: true })
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -74,29 +73,12 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
   }
 
   try {
-    // First, get the current highest position
-    const { data: existingDemos, error: fetchError } = await supabase
-      .from('demos')
-      .select('position')
-      .order('position', { ascending: false })
-      .limit(1);
-
-    if (fetchError) {
-      console.error('Error fetching current position:', fetchError);
-      return { data: null, error: fetchError };
-    }
-
-    const nextPosition = existingDemos && existingDemos.length > 0 
-      ? (existingDemos[0].position + 1) 
-      : 0;
-
     const demoData: Omit<DemoInsert, 'id'> = {
       ...demo,
       user_id: user.id,
       email_sent: false,
       call_made: false,
       showed: 'Pending',
-      position: nextPosition,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
