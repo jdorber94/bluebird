@@ -91,15 +91,19 @@ export default function Dashboard() {
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
     
+    // Format date to YYYY-MM-DD
     const formatDate = (date: Date) => {
       return date.toISOString().split('T')[0];
     };
+
+    // Set time to 9:00 AM
+    const defaultTime = '09:00:00';
 
     const newDemo = {
       name: 'New Demo',
       date_booked: formatDate(now),
       demo_date: formatDate(nextWeek),
-      demo_time: '09:00:00',
+      demo_time: defaultTime,
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const

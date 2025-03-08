@@ -19,10 +19,52 @@ export default function EditableCell({ value, onChange, type = 'text' }: Editabl
     }
   }, [isEditing]);
 
+  // Format the display value
+  const formatDisplayValue = (val: string) => {
+    if (type === 'date') {
+      try {
+        return new Date(val).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch (e) {
+        return val;
+      }
+    }
+    if (type === 'time') {
+      try {
+        return new Date(`2000-01-01T${val}`).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+      } catch (e) {
+        return val;
+      }
+    }
+    return val;
+  };
+
   const handleBlur = () => {
     setIsEditing(false);
     if (editValue !== value) {
-      onChange(editValue);
+      if (type === 'time') {
+        // Round to nearest 15 minutes
+        try {
+          const [hours, minutes] = editValue.split(':');
+          const date = new Date();
+          date.setHours(parseInt(hours));
+          date.setMinutes(Math.round(parseInt(minutes) / 15) * 15);
+          date.setSeconds(0);
+          const roundedTime = date.toTimeString().split(' ')[0];
+          onChange(roundedTime);
+        } catch (e) {
+          onChange(editValue);
+        }
+      } else {
+        onChange(editValue);
+      }
     }
   };
 
@@ -46,6 +88,7 @@ export default function EditableCell({ value, onChange, type = 'text' }: Editabl
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className="w-full px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        step={type === 'time' ? '900' : undefined} // 15 minutes in seconds
       />
     );
   }
@@ -55,7 +98,7 @@ export default function EditableCell({ value, onChange, type = 'text' }: Editabl
       onClick={() => setIsEditing(true)}
       className="cursor-pointer hover:bg-gray-50 px-2 py-1 -mx-2 rounded transition-colors"
     >
-      {value}
+      {formatDisplayValue(value)}
     </div>
   );
 } 
