@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Your other CSS can go here */
+/* Remove any custom CSS that might be interfering with Tailwind */
 
 :root {
   --foreground-rgb: 0, 0, 0;

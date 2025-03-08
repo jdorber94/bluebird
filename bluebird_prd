@@ -1,0 +1,56 @@
+ShowRate Manager
+Overview
+A web application designed to help SDRs (Sales Development Representatives) improve their demo show rates. The platform seamlessly integrates with Google Calendar to automate the tracking of booked demos, send timely reminders via email and phone, and provide clear, actionable analytics.
+Core Features
+1. Google Calendar Integration
+Securely connect SDR Google Calendars.
+Automatically detect and import newly scheduled demos into the platform.
+2. Demo Management Dashboard
+Display demos clearly organized in rows.
+Each row to include:
+Company Name
+Date Booked
+Date of Demo
+Email Reminder (checkbox)
+Phone Reminder (checkbox)
+Status Dropdown Toggle: Options include "Showed," "In Progress," "Didn't Show," "Rebook," etc.
+3. Reminder Automation
+Checkbox-driven automatic email and SMS (phone) reminders.
+Reminders customizable with pre-written templates.
+4. Analytics and Reporting
+Real-time tracking of demo statuses.
+Calculate and display metrics such as:
+Overall show rate percentage.
+No-show percentage.
+Rebooked demos count.
+5. User Authentication
+Simple, secure login with email/password or Google OAuth.
+User Flow
+User logs into ShowRate Manager.
+User connects their Google Calendar.
+Platform syncs and imports upcoming demo appointments.
+User reviews demo details, adjusts reminders (email/phone), and manages demo statuses via dropdown.
+Reminders sent automatically at set intervals prior to the demo.
+After each demo, user updates the status using the dropdown.
+Analytics dashboard updates to reflect new metrics and data.
+Design and UI/UX Considerations
+Modern, clean, intuitive UI leveraging Tailwind CSS.
+Dashboard clearly segmented for readability.
+Interactive dropdowns and checkboxes are easy to use.
+Minimalistic yet professional design aesthetic inspired by platforms like Linear, Vercel, and Notion.
+Subtle animations/transitions using Framer Motion for polished user interactions.
+Tech Stack
+Frontend: Next.js, Tailwind CSS, shadcn/ui
+Backend: Next.js API routes, Google Calendar API integration
+Database: Supabase (free tier for MVP)
+Hosting: Vercel
+Authentication: Supabase Auth (with Google OAuth support)
+Goals
+Increase SDR demo show rate through proactive reminder automation.
+Provide clear visibility into demo performance metrics.
+Ensure ease-of-use and minimal manual data entry for users.
+Future Enhancements (Post-MVP)
+Integration with Slack for additional notification options.
+AI-driven insights and recommendations based on historical show rates.
+Mobile application for on-the-go management.
+
