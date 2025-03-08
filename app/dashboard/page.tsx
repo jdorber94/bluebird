@@ -19,7 +19,15 @@ interface Demo {
 export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const router = useRouter();
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     loadDemos();
@@ -100,29 +108,41 @@ export default function Dashboard() {
     await loadDemos();
   };
 
+  const handleDeleteDemo = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this demo?')) return;
+    
+    const { error } = await deleteDemo(id);
+    if (error) {
+      console.error('Error deleting demo:', error);
+      return;
+    }
+    await loadDemos();
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
+      <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
         <h1 className="text-xl font-semibold mb-8">Bluebird</h1>
-        <nav className="space-y-2">
+        <nav className="flex-1 space-y-2">
           <a href="#" className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md">
             <span className="mr-3">📊</span>
             Demo Dashboard
           </a>
-          <div className="mt-auto pt-8">
-            <a href="#" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
-              <span className="mr-3">⚙️</span>
-              Settings
-            </a>
-          </div>
         </nav>
-        {/* User Profile */}
-        <div className="absolute bottom-4 left-4 flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-          <div>
-            <div className="text-sm font-medium">Yusuf Hilmi</div>
-            <div className="text-xs text-gray-500">Demo Manager</div>
+        
+        {/* Settings and Profile Section */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <a href="#" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mb-4">
+            <span className="mr-3">⚙️</span>
+            Settings
+          </a>
+          <div className="flex items-center space-x-3 px-4">
+            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+            <div>
+              <div className="text-sm font-medium">Yusuf Hilmi</div>
+              <div className="text-xs text-gray-500">Demo Manager</div>
+            </div>
           </div>
         </div>
       </div>
@@ -225,8 +245,31 @@ export default function Dashboard() {
                           {demo.showed}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button className="text-gray-400 hover:text-gray-600">•••</button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenu(activeMenu === demo.id ? null : demo.id);
+                          }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          •••
+                        </button>
+                        {activeMenu === demo.id && (
+                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteDemo(demo.id);
+                                }}
+                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                              >
+                                Delete Demo
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
