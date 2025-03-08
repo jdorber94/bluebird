@@ -19,6 +19,7 @@ export interface Database {
           email_sent: boolean
           call_made: boolean
           showed: 'Yes' | 'No' | 'Pending'
+          user_id: string | null
           position: number
           created_at?: string
           updated_at?: string
@@ -32,7 +33,8 @@ export interface Database {
           email_sent?: boolean
           call_made?: boolean
           showed?: 'Yes' | 'No' | 'Pending'
-          position?: number
+          user_id?: string | null
+          position: number
           created_at?: string
           updated_at?: string
         }
@@ -45,6 +47,7 @@ export interface Database {
           email_sent?: boolean
           call_made?: boolean
           showed?: 'Yes' | 'No' | 'Pending'
+          user_id?: string | null
           position?: number
           created_at?: string
           updated_at?: string
@@ -56,8 +59,8 @@ export interface Database {
           email: string
           full_name: string
           role: string
-          created_at: string
-          updated_at: string
+          created_at?: string
+          updated_at?: string
         }
         Insert: {
           id: string

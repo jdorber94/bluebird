@@ -12,6 +12,7 @@ interface Demo {
   call_made: boolean;
   showed: 'Yes' | 'No' | 'Pending';
   user_id?: string;
+  position: number;
 }
 
 // Initialize the Supabase client
