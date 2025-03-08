@@ -139,12 +139,7 @@ export default function Dashboard() {
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
     
-    // Format date to YYYY-MM-DD
-    const formatDate = (date: Date) => {
-      return date.toISOString().split('T')[0];
-    };
-
-    // Set time to 9:00 AM
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
     const defaultTime = '09:00:00';
 
     const newDemo = {
@@ -155,27 +150,18 @@ export default function Dashboard() {
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const,
-      position: demos.length // Add new demos at the end
+      position: demos.length
     };
 
-    // Add to state immediately with a temporary ID
-    const tempId = Date.now(); // Use timestamp as temporary ID
-    setDemos([...demos, { ...newDemo, id: tempId }]);
-
-    // Then update the database
-    const { error, data } = await createDemo(newDemo);
-    if (error) {
-      console.error('Error creating demo:', error);
-      // Remove the temporary demo if there was an error
-      setDemos(demos);
-      return;
-    }
-
-    // Update the demo with the real ID from the database
-    if (data) {
-      setDemos(prevDemos => prevDemos.map(demo => 
-        demo.id === tempId ? { ...demo, id: data.id } : demo
-      ));
+    try {
+      const { data, error } = await createDemo(newDemo);
+      if (error) throw error;
+      if (data) {
+        setDemos(prevDemos => [...prevDemos, data]);
+      }
+    } catch (err) {
+      console.error('Error creating demo:', err);
+      alert('Failed to create demo. Please try again.');
     }
   };
 
