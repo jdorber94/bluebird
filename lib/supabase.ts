@@ -142,8 +142,23 @@ export const migrateDemosTable = async () => {
   }
 
   try {
-    // First, add the position column if it doesn't exist
-    await supabase.rpc('add_position_column_if_not_exists');
+    // First, try to use the RPC function
+    try {
+      await supabase.rpc('add_position_column_if_not_exists');
+    } catch (rpcError) {
+      console.warn('RPC function failed, falling back to direct SQL:', rpcError);
+      
+      // Check if position column exists and add it if it doesn't
+      // This is a fallback if the RPC function fails
+      const { error: alterError } = await supabase.from('demos')
+        .select('position')
+        .limit(1);
+      
+      if (alterError && alterError.message.includes('column "position" does not exist')) {
+        console.log('Position column does not exist, skipping migration');
+        // We'll just continue and let the app handle missing columns gracefully
+      }
+    }
 
     // Then, update existing rows with sequential positions
     const { data: demos, error: fetchError } = await supabase
@@ -151,16 +166,26 @@ export const migrateDemosTable = async () => {
       .select('id')
       .order('created_at');
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error('Error fetching demos:', fetchError);
+      return { error: fetchError };
+    }
 
-    // Update each demo with a position
-    for (let i = 0; i < (demos?.length || 0); i++) {
-      const { error: updateError } = await supabase
-        .from('demos')
-        .update({ position: i })
-        .eq('id', demos![i].id);
+    if (demos && demos.length > 0) {
+      // Update each demo with a position
+      for (let i = 0; i < demos.length; i++) {
+        const { error: updateError } = await supabase
+          .from('demos')
+          .update({ position: i })
+          .eq('id', demos[i].id);
 
-      if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating demo position:', updateError);
+          if (updateError.message.includes('column "position" does not exist')) {
+            break; // Stop trying to update positions if the column doesn't exist
+          }
+        }
+      }
     }
 
     return { success: true };

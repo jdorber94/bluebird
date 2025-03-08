@@ -31,10 +31,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     const init = async () => {
-      // Run migration first
-      const { error: migrationError } = await migrateDemosTable();
-      if (migrationError) {
-        console.error('Migration error:', migrationError);
+      try {
+        // Run migration first
+        const { error: migrationError } = await migrateDemosTable();
+        if (migrationError) {
+          console.error('Migration error:', migrationError);
+          // Continue loading demos even if migration fails
+        }
+      } catch (err) {
+        console.error('Unexpected error during initialization:', err);
       }
       
       // Then load demos
@@ -46,13 +51,20 @@ export default function Dashboard() {
 
   const loadDemos = async () => {
     setLoading(true);
-    const { data, error } = await getDemos();
-    if (error) {
-      console.error('Error loading demos:', error);
-      return;
+    try {
+      const { data, error } = await getDemos();
+      if (error) {
+        console.error('Error loading demos:', error);
+        setDemos([]);
+      } else {
+        setDemos(data || []);
+      }
+    } catch (err) {
+      console.error('Unexpected error loading demos:', err);
+      setDemos([]);
+    } finally {
+      setLoading(false);
     }
-    setDemos(data || []);
-    setLoading(false);
   };
 
   const handleUpdate = async (id: string, field: keyof Demo, value: any) => {
