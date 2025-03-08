@@ -61,16 +61,30 @@ export default function Dashboard() {
   };
 
   const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: number, field: 'email_sent' | 'call_made') => {
-    e.stopPropagation(); // Stop event propagation
-    const demo = demos.find(d => d.id === id);
-    if (!demo) return;
+    e.stopPropagation();
     
-    const { error } = await updateDemo(id, { [field]: !demo[field] });
+    // Find the demo and update it locally first
+    const demoIndex = demos.findIndex(d => d.id === id);
+    if (demoIndex === -1) return;
+
+    // Create a new array with the updated demo
+    const updatedDemos = [...demos];
+    updatedDemos[demoIndex] = {
+      ...updatedDemos[demoIndex],
+      [field]: !updatedDemos[demoIndex][field]
+    };
+
+    // Update the state immediately
+    setDemos(updatedDemos);
+
+    // Then update the database
+    const { error } = await updateDemo(id, { [field]: updatedDemos[demoIndex][field] });
     if (error) {
       console.error('Error updating demo:', error);
+      // Revert the change if there was an error
+      setDemos(demos);
       return;
     }
-    await loadDemos();
   };
 
   const handleShowedChange = async (id: number) => {
