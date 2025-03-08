@@ -112,60 +112,35 @@ export default function Dashboard() {
     }
   };
 
-  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: string, field: 'email_reminder' | 'phone_reminder') => {
-    e.stopPropagation();
-    
-    // Find the demo and update it locally first
-    const demoIndex = demos.findIndex(d => d.id === id);
-    if (demoIndex === -1) return;
+  const handleCheckboxChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    id: string,
+    field: 'email_sent' | 'call_made'
+  ) => {
+    const checked = e.target.checked;
+    await handleUpdate(id, field, checked);
+  };
 
-    // Create a new array with the updated demo
-    const updatedDemos = [...demos];
-    updatedDemos[demoIndex] = {
-      ...updatedDemos[demoIndex],
-      [field]: !updatedDemos[demoIndex][field]
-    };
-
-    // Update the state immediately
-    setDemos(updatedDemos);
-
-    // Then update the database
-    const { error } = await updateDemo(id, { [field]: updatedDemos[demoIndex][field] });
-    if (error) {
-      console.error('Error updating demo:', error);
-      // Revert the change if there was an error
-      setDemos(demos);
-      return;
+  const getStatusDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
+    switch (showed) {
+      case 'Yes':
+        return <span className="text-green-500 font-medium">Yes</span>;
+      case 'No':
+        return <span className="text-red-500 font-medium">No</span>;
+      default:
+        return <span className="text-amber-500 font-medium">Pending</span>;
     }
   };
 
   const handleStatusChange = async (id: string) => {
-    // Find the demo and update it locally first
-    const demoIndex = demos.findIndex(d => d.id === id);
-    if (demoIndex === -1) return;
+    const demo = demos.find(d => d.id === id);
+    if (!demo) return;
 
-    const states = ['Scheduled', 'Showed', "Didn't Show"];
-    const currentIndex = states.indexOf(demos[demoIndex].status);
-    const nextIndex = (currentIndex + 1) % states.length;
+    // Cycle through statuses: Pending -> Yes -> No -> Pending
+    const nextStatus = demo.showed === 'Pending' ? 'Yes' : 
+                      demo.showed === 'Yes' ? 'No' : 'Pending';
 
-    // Create a new array with the updated demo
-    const updatedDemos = [...demos];
-    updatedDemos[demoIndex] = {
-      ...updatedDemos[demoIndex],
-      status: states[nextIndex]
-    };
-
-    // Update the state immediately
-    setDemos(updatedDemos);
-
-    // Then update the database
-    const { error } = await updateDemo(id, { status: states[nextIndex] });
-    if (error) {
-      console.error('Error updating demo:', error);
-      // Revert the change if there was an error
-      setDemos(demos);
-      return;
-    }
+    await handleUpdate(id, 'showed', nextStatus);
   };
 
   const handleAddDemo = async () => {
@@ -176,14 +151,13 @@ export default function Dashboard() {
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
     const newDemo = {
-      company_name: 'New Demo',
+      name: 'New Demo',
       date_booked: formatDate(now),
-      date_of_demo: formatDate(nextWeek),
-      email_reminder: true,
-      phone_reminder: false,
-      status: 'Scheduled',
-      email_reminder_sent: false,
-      phone_reminder_sent: false
+      demo_date: formatDate(nextWeek),
+      demo_time: '09:00',
+      email_sent: false,
+      call_made: false,
+      showed: 'Pending' as const
     };
 
     try {
@@ -310,14 +284,13 @@ export default function Dashboard() {
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="w-10"></th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <Droppable droppableId="table" direction="vertical">
@@ -342,53 +315,44 @@ export default function Dashboard() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                   <EditableCell
-                                    value={demo.company_name}
-                                    onChange={(value) => handleUpdate(demo.id, 'company_name', value)}
+                                    value={demo.name || ''}
+                                    onChange={(value) => handleUpdate(demo.id, 'name', value)}
                                   />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <EditableCell
-                                    value={new Date(demo.date_booked).toISOString().split('T')[0]}
+                                    value={demo.date_booked || new Date().toISOString().split('T')[0]}
                                     onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
                                     type="date"
                                   />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <EditableCell
-                                    value={new Date(demo.date_of_demo).toISOString().split('T')[0]}
-                                    onChange={(value) => handleUpdate(demo.id, 'date_of_demo', value)}
+                                    value={demo.demo_date || new Date().toISOString().split('T')[0]}
+                                    onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
                                     type="date"
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                   <input 
                                     type="checkbox" 
-                                    checked={demo.email_reminder}
+                                    checked={demo.email_sent}
                                     className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'email_reminder')}
+                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={demo.call_made}
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <input 
-                                    type="checkbox" 
-                                    checked={demo.phone_reminder}
-                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'phone_reminder')}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <button
-                                    onClick={() => handleStatusChange(demo.id)}
-                                    className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                                      demo.status === 'Showed' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                                      demo.status === "Didn't Show" ? 'bg-red-100 text-red-800 hover:bg-red-200' :
-                                      'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                  >
-                                    {demo.status}
-                                  </button>
+                                  {getStatusDisplay(demo.showed)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <ActionMenu 
