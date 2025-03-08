@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import EditableCell from '../components/EditableCell';
 import ActionMenu from '../components/ActionMenu';
 import ProfileMenu from '../components/ProfileMenu';
@@ -16,6 +17,7 @@ interface Demo {
   email_sent: boolean;
   call_made: boolean;
   showed: 'Yes' | 'No' | 'Pending';
+  position?: number;
 }
 
 export default function Dashboard() {
@@ -192,6 +194,46 @@ export default function Dashboard() {
     }
   };
 
+  const reorderDemos = (startIndex: number, endIndex: number) => {
+    const result = Array.from(demos);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    return result;
+  };
+
+  const onDragEnd = async (result: any) => {
+    // Dropped outside the list
+    if (!result.destination) {
+      return;
+    }
+
+    // If the item didn't move, don't do anything
+    if (result.destination.index === result.source.index) {
+      return;
+    }
+
+    const reorderedDemos = reorderDemos(
+      result.source.index,
+      result.destination.index
+    );
+
+    // Update state immediately
+    setDemos(reorderedDemos);
+
+    // Update positions in the database
+    // This is a simplified version - you'll need to add position field to your database
+    try {
+      // Update each demo's position
+      await Promise.all(reorderedDemos.map((demo, index) => 
+        updateDemo(demo.id, { position: index })
+      ));
+    } catch (error) {
+      console.error('Error updating positions:', error);
+      // Optionally revert to original order if there's an error
+      setDemos(demos);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -239,89 +281,114 @@ export default function Dashboard() {
             ) : demos.length === 0 ? (
               <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
             ) : (
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {demos.map((demo) => (
-                    <tr key={demo.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        <EditableCell
-                          value={demo.name}
-                          onChange={(value) => handleUpdate(demo.id, 'name', value)}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <EditableCell
-                          value={demo.date_booked}
-                          onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
-                          type="date"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <EditableCell
-                          value={demo.demo_date}
-                          onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
-                          type="date"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <EditableCell
-                          value={demo.demo_time}
-                          onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
-                          type="time"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input 
-                          type="checkbox" 
-                          checked={demo.email_sent}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                          onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input 
-                          type="checkbox" 
-                          checked={demo.call_made}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                          onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => handleShowedChange(demo.id)}
-                          className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                            demo.showed === 'Yes' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                            demo.showed === 'No' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
-                            'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                          }`}
-                        >
-                          {demo.showed}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <ActionMenu 
-                          demoId={demo.id}
-                          onDelete={handleDeleteDemo}
-                        />
-                      </td>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-10"></th> {/* Column for drag handle */}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Sent</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Made</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <Droppable droppableId="table" direction="vertical">
+                    {(provided) => (
+                      <tbody
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="bg-white divide-y divide-gray-200"
+                      >
+                        {demos.map((demo, index) => (
+                          <Draggable key={demo.id} draggableId={String(demo.id)} index={index}>
+                            {(provided, snapshot) => (
+                              <tr
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`${snapshot.isDragging ? 'bg-blue-50' : ''}`}
+                              >
+                                <td className="w-10 px-2">
+                                  <div {...provided.dragHandleProps} className="cursor-move">
+                                    ⋮⋮
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  <EditableCell
+                                    value={demo.name}
+                                    onChange={(value) => handleUpdate(demo.id, 'name', value)}
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <EditableCell
+                                    value={demo.date_booked}
+                                    onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
+                                    type="date"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <EditableCell
+                                    value={demo.demo_date}
+                                    onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
+                                    type="date"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <EditableCell
+                                    value={demo.demo_time}
+                                    onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
+                                    type="time"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={demo.email_sent}
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={demo.call_made}
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
+                                    onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <button
+                                    onClick={() => handleShowedChange(demo.id)}
+                                    className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
+                                      demo.showed === 'Yes' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                                      demo.showed === 'No' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                                      'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                  >
+                                    {demo.showed}
+                                  </button>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <ActionMenu 
+                                    demoId={demo.id}
+                                    onDelete={handleDeleteDemo}
+                                  />
+                                </td>
+                              </tr>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </tbody>
+                    )}
+                  </Droppable>
+                </table>
+              </DragDropContext>
             )}
           </div>
         </div>
