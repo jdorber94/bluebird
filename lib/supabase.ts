@@ -138,4 +138,40 @@ export async function updateProfile(updates: {
 
   if (error) throw error;
   return data;
-} 
+}
+
+// Migration function to add position column
+export const migrateDemosTable = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: new Error('User not authenticated') };
+  }
+
+  try {
+    // First, add the position column if it doesn't exist
+    await supabase.rpc('add_position_column_if_not_exists');
+
+    // Then, update existing rows with sequential positions
+    const { data: demos, error: fetchError } = await supabase
+      .from('demos')
+      .select('id')
+      .order('created_at');
+
+    if (fetchError) throw fetchError;
+
+    // Update each demo with a position
+    for (let i = 0; i < (demos?.length || 0); i++) {
+      const { error: updateError } = await supabase
+        .from('demos')
+        .update({ position: i })
+        .eq('id', demos![i].id);
+
+      if (updateError) throw updateError;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Migration error:', error);
+    return { error };
+  }
+}; 

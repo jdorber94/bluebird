@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import EditableCell from '../components/EditableCell';
 import ActionMenu from '../components/ActionMenu';
 import ProfileMenu from '../components/ProfileMenu';
-import { getDemos, updateDemo, createDemo, deleteDemo } from '@/lib/supabase';
+import { getDemos, updateDemo, createDemo, deleteDemo, migrateDemosTable } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface Demo {
@@ -39,7 +39,18 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    loadDemos();
+    const init = async () => {
+      // Run migration first
+      const { error: migrationError } = await migrateDemosTable();
+      if (migrationError) {
+        console.error('Migration error:', migrationError);
+      }
+      
+      // Then load demos
+      await loadDemos();
+    };
+    
+    init();
   }, []);
 
   const loadDemos = async () => {
@@ -142,6 +153,10 @@ export default function Dashboard() {
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
     const defaultTime = '09:00:00';
 
+    // Get the maximum position value
+    const maxPosition = demos.reduce((max, demo) => 
+      demo.position !== undefined && demo.position > max ? demo.position : max, -1);
+
     const newDemo = {
       name: 'New Demo',
       date_booked: formatDate(now),
@@ -150,7 +165,7 @@ export default function Dashboard() {
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const,
-      position: demos.length
+      position: maxPosition + 1
     };
 
     try {
