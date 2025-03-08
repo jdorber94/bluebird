@@ -68,6 +68,7 @@ A web application designed to help SDRs (Sales Development Representatives) impr
        attendees jsonb,
        description text,
        location text,
+       position integer not null default 0,
        created_at timestamp with time zone default now()
      );
      ```

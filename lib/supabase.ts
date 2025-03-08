@@ -52,7 +52,7 @@ export const getDemos = async () => {
       .from('demos')
       .select('*')
       .eq('user_id', user.id)
-      .order('position', { ascending: true });
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching demos:', error);
@@ -73,34 +73,19 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
   }
 
   try {
-    // Get the current maximum position
-    const { data: existingDemos, error: fetchError } = await supabase
-      .from('demos')
-      .select('position')
-      .eq('user_id', user.id)
-      .order('position', { ascending: false })
-      .limit(1);
+    const demoData: Omit<DemoInsert, 'id'> = {
+      ...demo,
+      user_id: user.id,
+      email_sent: false,
+      call_made: false,
+      showed: 'Pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    if (fetchError) {
-      console.error('Error fetching max position:', fetchError);
-      return { data: null, error: fetchError };
-    }
-
-    const maxPosition = existingDemos && existingDemos.length > 0 ? existingDemos[0].position || 0 : -1;
-    const newPosition = maxPosition + 1;
-
-    // Create the new demo
     const { data, error } = await supabase
       .from('demos')
-      .insert([{
-        ...demo,
-        user_id: user.id,
-        position: newPosition,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        email_reminder_sent: false,
-        phone_reminder_sent: false
-      }])
+      .insert([demoData])
       .select()
       .single();
 

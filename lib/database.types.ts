@@ -12,57 +12,42 @@ export interface Database {
       demos: {
         Row: {
           id: string
+          name: string | null
+          date_booked: string | null
+          demo_date: string | null
+          demo_time: string | null
+          email_sent: boolean
+          call_made: boolean
+          showed: 'Yes' | 'No' | 'Pending'
           user_id: string
-          company_name: string
-          date_booked: string
-          date_of_demo: string
-          email_reminder: boolean
-          phone_reminder: boolean
-          status: string
-          email_reminder_sent: boolean
-          phone_reminder_sent: boolean
-          attendees: { email: string; name: string }[] | null
-          description: string | null
-          location: string | null
           created_at: string
-          updated_at: string | null
-          position: number | null
+          updated_at: string
         }
         Insert: {
           id?: string
+          name?: string | null
+          date_booked?: string | null
+          demo_date?: string | null
+          demo_time?: string | null
+          email_sent?: boolean
+          call_made?: boolean
+          showed?: 'Yes' | 'No' | 'Pending'
           user_id: string
-          company_name: string
-          date_booked: string
-          date_of_demo: string
-          email_reminder?: boolean
-          phone_reminder?: boolean
-          status?: string
-          email_reminder_sent?: boolean
-          phone_reminder_sent?: boolean
-          attendees?: { email: string; name: string }[] | null
-          description?: string | null
-          location?: string | null
           created_at?: string
-          updated_at?: string | null
-          position?: number | null
+          updated_at?: string
         }
         Update: {
           id?: string
+          name?: string | null
+          date_booked?: string | null
+          demo_date?: string | null
+          demo_time?: string | null
+          email_sent?: boolean
+          call_made?: boolean
+          showed?: 'Yes' | 'No' | 'Pending'
           user_id?: string
-          company_name?: string
-          date_booked?: string
-          date_of_demo?: string
-          email_reminder?: boolean
-          phone_reminder?: boolean
-          status?: string
-          email_reminder_sent?: boolean
-          phone_reminder_sent?: boolean
-          attendees?: { email: string; name: string }[] | null
-          description?: string | null
-          location?: string | null
           created_at?: string
-          updated_at?: string | null
-          position?: number | null
+          updated_at?: string
         }
       }
       profiles: {
@@ -96,10 +81,7 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      add_position_column_if_not_exists: {
-        Args: Record<string, never>
-        Returns: void
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
