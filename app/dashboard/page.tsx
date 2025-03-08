@@ -246,30 +246,38 @@ export default function Dashboard() {
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenu(activeMenu === demo.id ? null : demo.id);
-                          }}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          •••
-                        </button>
-                        {activeMenu === demo.id && (
-                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                            <div className="py-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteDemo(demo.id);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                              >
-                                Delete Demo
-                              </button>
+                        <div className="relative">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setActiveMenu(activeMenu === demo.id ? null : demo.id);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                          >
+                            •••
+                          </button>
+                          {activeMenu === demo.id && (
+                            <div 
+                              className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="py-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteDemo(demo.id);
+                                    setActiveMenu(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:bg-red-50"
+                                >
+                                  Delete Demo
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
