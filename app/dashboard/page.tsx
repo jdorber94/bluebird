@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import EditableCell from '../components/EditableCell';
 import ActionMenu from '../components/ActionMenu';
 import ProfileMenu from '../components/ProfileMenu';
@@ -195,7 +195,7 @@ export default function Dashboard() {
     return result;
   };
 
-  const onDragEnd = async (result: any) => {
+  const onDragEnd = async (result: DropResult) => {
     // Dropped outside the list
     if (!result.destination) {
       return;

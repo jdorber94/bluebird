@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 
 interface ActionMenuProps {
   demoId: string;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
@@ -22,6 +22,15 @@ export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleDelete = async () => {
+    try {
+      await onDelete(demoId);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error deleting demo:', error);
+    }
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -35,7 +44,7 @@ export default function ActionMenu({ demoId, onDelete }: ActionMenuProps) {
         <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
           <div className="py-1">
             <button
-              onClick={() => onDelete(demoId)}
+              onClick={handleDelete}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
             >
               Delete
