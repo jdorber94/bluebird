@@ -60,7 +60,8 @@ export default function Dashboard() {
     await loadDemos();
   };
 
-  const handleCheckboxChange = async (id: number, field: 'email_sent' | 'call_made') => {
+  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: number, field: 'email_sent' | 'call_made') => {
+    e.stopPropagation(); // Stop event propagation
     const demo = demos.find(d => d.id === id);
     if (!demo) return;
     
@@ -227,7 +228,8 @@ export default function Dashboard() {
                           type="checkbox" 
                           checked={demo.email_sent}
                           className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                          onChange={() => handleCheckboxChange(demo.id, 'email_sent')}
+                          onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -235,7 +237,8 @@ export default function Dashboard() {
                           type="checkbox" 
                           checked={demo.call_made}
                           className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer"
-                          onChange={() => handleCheckboxChange(demo.id, 'call_made')}
+                          onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
