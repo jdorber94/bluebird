@@ -2,18 +2,9 @@ import { createBrowserClient } from '@supabase/ssr';
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js';
 
-interface Demo {
-  id: number;
-  name: string;
-  date_booked: string;
-  demo_date: string;
-  demo_time: string;
-  email_sent: boolean;
-  call_made: boolean;
-  showed: 'Yes' | 'No' | 'Pending';
-  user_id?: string;
-  position: number;
-}
+type Demo = Database['public']['Tables']['demos']['Row'];
+type DemoInsert = Database['public']['Tables']['demos']['Insert'];
+type DemoUpdate = Database['public']['Tables']['demos']['Update'];
 
 // Initialize the Supabase client
 export const supabase = createBrowserClient<Database>(
@@ -53,11 +44,11 @@ export const getDemos = async () => {
   const { data, error } = await supabase
     .from('demos')
     .select('*')
-    .order('demo_date', { ascending: true });
+    .order('position', { ascending: true });
   return { data, error };
 };
 
-export const createDemo = async (demo: Omit<Demo, 'id'>) => {
+export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
   const user = await getCurrentUser();
   if (!user) {
     return { data: null, error: new Error('User not authenticated') };
@@ -77,7 +68,7 @@ export const createDemo = async (demo: Omit<Demo, 'id'>) => {
   return { data, error };
 };
 
-export const updateDemo = async (id: number, updates: Partial<Demo>) => {
+export const updateDemo = async (id: string, updates: DemoUpdate) => {
   const user = await getCurrentUser();
   if (!user) {
     return { data: null, error: new Error('User not authenticated') };
@@ -85,7 +76,10 @@ export const updateDemo = async (id: number, updates: Partial<Demo>) => {
 
   const { data, error } = await supabase
     .from('demos')
-    .update(updates)
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
@@ -93,7 +87,7 @@ export const updateDemo = async (id: number, updates: Partial<Demo>) => {
   return { data, error };
 };
 
-export const deleteDemo = async (id: number) => {
+export const deleteDemo = async (id: string) => {
   const user = await getCurrentUser();
   if (!user) {
     return { data: null, error: new Error('User not authenticated') };
