@@ -78,7 +78,14 @@ export default function Dashboard() {
         setDemos([]);
       } else {
         setError(null);
-        setDemos(data || []);
+        // Sort demos by position if available, otherwise by creation date
+        const sortedDemos = (data || []).sort((a, b) => {
+          if (typeof a.position === 'number' && typeof b.position === 'number') {
+            return a.position - b.position;
+          }
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+        setDemos(sortedDemos);
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
@@ -180,7 +187,13 @@ export default function Dashboard() {
         return;
       }
       if (data) {
-        setDemos(prevDemos => [...prevDemos, data]);
+        // Add the new demo to the end of the list
+        setDemos(prevDemos => {
+          const nextPosition = prevDemos.length > 0 
+            ? Math.max(...prevDemos.map(d => d.position)) + 1 
+            : 0;
+          return [...prevDemos, { ...data, position: nextPosition }];
+        });
       }
     } catch (err) {
       console.error('Error creating demo:', err);
