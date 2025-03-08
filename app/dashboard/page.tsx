@@ -215,7 +215,6 @@ export default function Dashboard() {
     setDemos(reorderedDemos);
 
     // Update positions in the database
-    // This is a simplified version - you'll need to add position field to your database
     try {
       // Update each demo's position
       await Promise.all(reorderedDemos.map((demo, index) => 
