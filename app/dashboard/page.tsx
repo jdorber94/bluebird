@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import EditableCell from '../components/EditableCell';
 import { getDemos, updateDemo, createDemo, deleteDemo } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -20,13 +20,18 @@ export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setActiveMenu(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActiveMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -246,40 +251,41 @@ export default function Dashboard() {
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="relative inline-block text-left">
+                        <div className="relative inline-block text-left" ref={menuRef}>
                           <button 
                             type="button"
                             onClick={(e) => {
-                              e.preventDefault();
                               e.stopPropagation();
                               setActiveMenu(activeMenu === demo.id ? null : demo.id);
                             }}
-                            className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none"
+                            className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none"
                           >
-                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="6" r="2" />
+                              <circle cx="12" cy="12" r="2" />
+                              <circle cx="12" cy="18" r="2" />
                             </svg>
                           </button>
                           {activeMenu === demo.id && (
                             <div 
-                              className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-50"
-                              role="menu"
-                              aria-orientation="vertical"
-                              aria-labelledby="options-menu"
+                              className="fixed z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+                              style={{
+                                top: 'auto',
+                                right: '0',
+                                transform: 'translateY(0)'
+                              }}
                             >
-                              <div className="py-1" role="none">
+                              <div className="py-1">
                                 <button
                                   type="button"
                                   onClick={(e) => {
-                                    e.preventDefault();
                                     e.stopPropagation();
                                     handleDeleteDemo(demo.id);
                                     setActiveMenu(null);
                                   }}
-                                  className="group flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                  role="menuitem"
+                                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                                 >
-                                  <svg className="mr-3 h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                  <svg className="mr-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                   </svg>
                                   Delete Demo
