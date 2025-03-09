@@ -220,7 +220,7 @@ export default function Dashboard() {
       name: 'New Demo',
       date_booked: formatDateTime(now),
       demo_date: formatDateTime(nextWeek),
-      demo_time: '09:00:00', // Format time as HH:MM:SS
+      demo_time: '09:00', // Format time as HH:mm
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const
@@ -398,7 +398,7 @@ export default function Dashboard() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
-                                    value={demo.demo_time || '09:00:00'}
+                                    value={demo.demo_time || '09:00'}
                                     onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
                                     type="time"
                                     className="text-sm text-gray-500"
