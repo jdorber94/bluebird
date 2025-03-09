@@ -379,7 +379,7 @@ export default function Dashboard() {
               <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
             ) : (
               <DragDropContext onDragEnd={onDragEnd}>
-                <table className="min-w-full">
+                <table className="min-w-full divide-y divide-gray-200 bg-white">
                   <thead>
                     <tr>
                       <th className="w-10 px-2"></th>
@@ -401,7 +401,7 @@ export default function Dashboard() {
                       <tbody
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className="bg-white divide-y divide-gray-200"
+                        className="divide-y divide-gray-200"
                       >
                         {demos.map((demo, index) => (
                           <Draggable key={demo.id} draggableId={demo.id} index={index}>
