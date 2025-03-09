@@ -21,6 +21,7 @@ export interface Database {
           call_made: boolean
           call_made_date: string | null
           showed: 'Yes' | 'No' | 'Pending'
+          status: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           user_id: string
           created_at: string
           updated_at: string
@@ -37,6 +38,7 @@ export interface Database {
           call_made?: boolean
           call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
+          status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           user_id: string
           created_at?: string
           updated_at?: string
@@ -53,6 +55,7 @@ export interface Database {
           call_made?: boolean
           call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
+          status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           user_id?: string
           created_at?: string
           updated_at?: string

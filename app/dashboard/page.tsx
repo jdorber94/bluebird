@@ -174,7 +174,36 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
+  const getStatusDisplay = (status: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked') => {
+    switch (status) {
+      case 'Accepted':
+        return (
+          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full">
+            Accepted
+          </span>
+        );
+      case 'Cancelled':
+        return (
+          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full">
+            Cancelled
+          </span>
+        );
+      case 'Rebooked':
+        return (
+          <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+            Rebooked
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+            Pending
+          </span>
+        );
+    }
+  };
+
+  const getShowedDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
     switch (showed) {
       case 'Yes':
         return (
@@ -201,11 +230,23 @@ export default function Dashboard() {
     const demo = demos.find(d => d.id === id);
     if (!demo) return;
 
-    // Cycle through statuses: Pending -> Yes -> No -> Pending
-    const nextStatus = demo.showed === 'Pending' ? 'Yes' : 
+    // Cycle through statuses: Pending -> Accepted -> Cancelled -> Rebooked -> Pending
+    const nextStatus = demo.status === 'Pending' ? 'Accepted' : 
+                      demo.status === 'Accepted' ? 'Cancelled' :
+                      demo.status === 'Cancelled' ? 'Rebooked' : 'Pending';
+
+    await handleUpdate(id, 'status', nextStatus);
+  };
+
+  const handleShowedChange = async (id: string) => {
+    const demo = demos.find(d => d.id === id);
+    if (!demo) return;
+
+    // Cycle through showed statuses: Pending -> Yes -> No -> Pending
+    const nextShowed = demo.showed === 'Pending' ? 'Yes' : 
                       demo.showed === 'Yes' ? 'No' : 'Pending';
 
-    await handleUpdate(id, 'showed', nextStatus);
+    await handleUpdate(id, 'showed', nextShowed);
   };
 
   const handleAddDemo = async () => {
@@ -220,10 +261,11 @@ export default function Dashboard() {
       name: 'New Demo',
       date_booked: formatDateTime(now),
       demo_date: formatDateTime(nextWeek),
-      demo_time: '09:00', // Format time as HH:mm
+      demo_time: '09:00',
       email_sent: false,
       call_made: false,
-      showed: 'Pending' as const
+      showed: 'Pending' as const,
+      status: 'Pending' as const
     };
 
     try {
@@ -350,6 +392,7 @@ export default function Dashboard() {
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Showed</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                     </tr>
                   </thead>
@@ -433,7 +476,15 @@ export default function Dashboard() {
                                     onClick={() => handleStatusChange(demo.id)}
                                     className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                   >
-                                    {getStatusDisplay(demo.showed)}
+                                    {getStatusDisplay(demo.status)}
+                                  </button>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <button
+                                    onClick={() => handleShowedChange(demo.id)}
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                  >
+                                    {getShowedDisplay(demo.showed)}
                                   </button>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
