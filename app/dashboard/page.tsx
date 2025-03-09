@@ -160,11 +160,18 @@ export default function Dashboard() {
   // Helper function to format dates
   const formatDate = (date: string | null) => {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (e) {
+      return '';
+    }
   };
 
   const getStatusDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
@@ -405,7 +412,7 @@ export default function Dashboard() {
                                   />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {formatDate(demo.email_sent_date)}
+                                  {demo.email_sent ? formatDate(demo.email_sent_date) : ''}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input 
@@ -417,7 +424,7 @@ export default function Dashboard() {
                                   />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {formatDate(demo.call_made_date)}
+                                  {demo.call_made ? formatDate(demo.call_made_date) : ''}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <button
