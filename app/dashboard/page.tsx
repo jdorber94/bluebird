@@ -319,19 +319,13 @@ export default function Dashboard() {
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="flex justify-end mb-8">
-            <div className="flex items-center space-x-4">
-              <button className="flex items-center px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md">
-                <span className="mr-2">🔍</span>
-                Filter
-              </button>
-              <button 
-                onClick={handleAddDemo}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                <span className="mr-2">+</span>
-                Add Demo
-              </button>
-            </div>
+            <button 
+              onClick={handleAddDemo}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
+            >
+              <span className="mr-2">+</span>
+              Add Demo
+            </button>
           </div>
 
           {/* Demo Table */}
