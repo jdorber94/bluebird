@@ -4,7 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function ProfileMenu() {
+interface ProfileMenuProps {
+  isCollapsed?: boolean;
+}
+
+export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -32,17 +36,19 @@ export default function ProfileMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-100 rounded-md w-full"
+        className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-2 hover:bg-gray-100 rounded-md w-full`}
       >
         <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-        <div className="text-left">
-          <div className="text-sm font-medium">Yusuf Hilmi</div>
-          <div className="text-xs text-gray-500">Demo Manager</div>
-        </div>
+        {!isCollapsed && (
+          <div className="text-left">
+            <div className="text-sm font-medium">Yusuf Hilmi</div>
+            <div className="text-xs text-gray-500">Demo Manager</div>
+          </div>
+        )}
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+        <div className={`absolute ${isCollapsed ? 'left-full ml-2' : 'bottom-full mb-2 left-0'} w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50`}>
           <div className="py-1">
             <a
               href="/profile"
