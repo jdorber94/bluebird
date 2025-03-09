@@ -344,6 +344,7 @@ export default function Dashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Email Sent</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Email Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
@@ -392,6 +393,14 @@ export default function Dashboard() {
                                     value={demo.demo_date || new Date().toISOString()}
                                     onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
                                     type="date"
+                                    className="text-sm text-gray-500"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <EditableCell
+                                    value={demo.demo_time || '09:00:00'}
+                                    onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
+                                    type="time"
                                     className="text-sm text-gray-500"
                                   />
                                 </td>
