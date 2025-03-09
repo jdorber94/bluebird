@@ -17,7 +17,9 @@ export interface Database {
           demo_date: string | null
           demo_time: string | null
           email_sent: boolean
+          email_sent_date: string | null
           call_made: boolean
+          call_made_date: string | null
           showed: 'Yes' | 'No' | 'Pending'
           user_id: string
           created_at: string
@@ -31,7 +33,9 @@ export interface Database {
           demo_date?: string | null
           demo_time?: string | null
           email_sent?: boolean
+          email_sent_date?: string | null
           call_made?: boolean
+          call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
           user_id: string
           created_at?: string
@@ -45,7 +49,9 @@ export interface Database {
           demo_date?: string | null
           demo_time?: string | null
           email_sent?: boolean
+          email_sent_date?: string | null
           call_made?: boolean
+          call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
           user_id?: string
           created_at?: string

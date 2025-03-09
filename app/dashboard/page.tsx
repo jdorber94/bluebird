@@ -125,7 +125,46 @@ export default function Dashboard() {
     field: 'email_sent' | 'call_made'
   ) => {
     const checked = e.target.checked;
-    await handleUpdate(id, field, checked);
+    const now = new Date().toISOString();
+    
+    // Update both the checkbox and the corresponding date
+    const updates = {
+      [field]: checked,
+      [`${field}_date`]: checked ? now : null
+    };
+    
+    // Find the demo and update it locally first
+    const demoIndex = demos.findIndex(d => d.id === id);
+    if (demoIndex === -1) return;
+
+    // Create a new array with the updated demo
+    const updatedDemos = [...demos];
+    updatedDemos[demoIndex] = {
+      ...updatedDemos[demoIndex],
+      ...updates
+    };
+
+    // Update the state immediately
+    setDemos(updatedDemos);
+
+    // Then update the database
+    const { error } = await updateDemo(id, updates);
+    if (error) {
+      console.error('Error updating demo:', error);
+      // Revert the change if there was an error
+      setDemos(demos);
+      return;
+    }
+  };
+
+  // Helper function to format dates
+  const formatDate = (date: string | null) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const getStatusDisplay = (showed: 'Yes' | 'No' | 'Pending') => {
@@ -306,7 +345,9 @@ export default function Dashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Email Sent</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Email Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                     </tr>
@@ -340,7 +381,7 @@ export default function Dashboard() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
-                                    value={demo.date_booked || new Date().toISOString().split('T')[0]}
+                                    value={demo.date_booked || new Date().toISOString()}
                                     onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
                                     type="date"
                                     className="text-sm text-gray-500"
@@ -348,7 +389,7 @@ export default function Dashboard() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <EditableCell
-                                    value={demo.demo_date || new Date().toISOString().split('T')[0]}
+                                    value={demo.demo_date || new Date().toISOString()}
                                     onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
                                     type="date"
                                     className="text-sm text-gray-500"
@@ -363,6 +404,9 @@ export default function Dashboard() {
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {formatDate(demo.email_sent_date)}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input 
                                     type="checkbox" 
@@ -371,6 +415,9 @@ export default function Dashboard() {
                                     onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
                                     onClick={(e) => e.stopPropagation()}
                                   />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {formatDate(demo.call_made_date)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <button
