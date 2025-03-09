@@ -393,7 +393,7 @@ export default function Dashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Showed</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
+                      <th className="w-10"></th>
                     </tr>
                   </thead>
                   <Droppable droppableId="table" direction="vertical">
@@ -487,7 +487,7 @@ export default function Dashboard() {
                                     {getShowedDisplay(demo.showed)}
                                   </button>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <td className="pl-2 pr-4 py-4 whitespace-nowrap text-center">
                                   <ActionMenu 
                                     demoId={demo.id}
                                     onDelete={handleDeleteDemo}
