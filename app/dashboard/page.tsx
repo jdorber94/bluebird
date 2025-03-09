@@ -308,7 +308,6 @@ export default function Dashboard() {
         {/* Settings and Profile Section */}
         <div className="border-t border-gray-200 pt-4 mt-4">
           <a href="#" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mb-4">
-            <span className="mr-3">⚙️</span>
             Settings
           </a>
           <ProfileMenu />
