@@ -338,8 +338,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Fixed-width Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col fixed h-screen">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
         <h1 className="text-xl font-semibold mb-8">Bluebird</h1>
         <nav className="flex-1 space-y-2">
           <a href="#" className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md">
@@ -356,22 +356,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 ml-64"> {/* Offset by sidebar width */}
-        <div className="p-8 min-h-screen">
-          <div className="flex justify-end mb-8">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="min-h-screen bg-gray-100">
+          <div className="fixed top-0 right-0 z-50 p-4 md:p-8">
             <button 
               onClick={handleAddDemo}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150 shadow-lg"
             >
               <span className="mr-2">+</span>
               Add Demo
             </button>
           </div>
 
-          {/* Demo Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="p-4 md:p-8 mt-16">
+            {/* Demo Table */}
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
               {loading ? (
                 <div className="p-8 text-center text-gray-500">Loading demos...</div>
               ) : error ? (
