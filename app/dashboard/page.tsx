@@ -257,12 +257,14 @@ export default function Dashboard() {
       name: 'New Demo',
       date_booked: formatDateTime(now),
       demo_date: formatDateTime(nextWeek),
-      demo_time: '09:00',
+      demo_time: '09:00:00', // Make sure time format matches what the database expects
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const,
       status: 'Pending' as const
     };
+
+    console.log('Adding new demo:', newDemo);
 
     try {
       const { data, error } = await createDemo(newDemo);
@@ -272,6 +274,7 @@ export default function Dashboard() {
         return;
       }
       if (data) {
+        console.log('Demo created successfully:', data);
         // Add new demo and resort the list
         setDemos(prevDemos => {
           const updatedDemos = [...prevDemos, data];

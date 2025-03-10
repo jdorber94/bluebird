@@ -80,9 +80,12 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
       email_sent: false,
       call_made: false,
       showed: 'Pending',
+      status: 'Pending',
       created_at: now,
       updated_at: now
     };
+
+    console.log('Creating demo with data:', demoData);
 
     const { data, error } = await supabase
       .from('demos')
