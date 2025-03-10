@@ -131,7 +131,7 @@ export default function Dashboard() {
     // Update both the checkbox and the corresponding date
     const updates = {
       [field]: checked,
-      [`${field}_date`]: checked ? now : null
+      [`${field}_date`]: now  // Always set a date, even when unchecking
     };
     
     // Find the demo and update it locally first

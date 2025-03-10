@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { Database } from './database.types';
+import { Database } from '@/lib/database.types';
 import { createClient } from '@supabase/supabase-js';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
@@ -73,14 +73,17 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
   }
 
   try {
+    const now = new Date().toISOString();
     const demoData: Omit<DemoInsert, 'id'> = {
       ...demo,
       user_id: user.id,
       email_sent: false,
       call_made: false,
       showed: 'Pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      email_sent_date: now,
+      call_made_date: now,
+      created_at: now,
+      updated_at: now
     };
 
     const { data, error } = await supabase

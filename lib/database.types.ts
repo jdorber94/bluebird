@@ -18,9 +18,9 @@ export interface Database {
           demo_date: string
           demo_time: string
           email_sent: boolean
-          email_sent_date: string | null
+          email_sent_date: string
           call_made: boolean
-          call_made_date: string | null
+          call_made_date: string
           showed: 'Yes' | 'No' | 'Pending'
           status: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           created_at: string
@@ -34,9 +34,9 @@ export interface Database {
           demo_date: string
           demo_time: string
           email_sent?: boolean
-          email_sent_date?: string | null
+          email_sent_date?: string
           call_made?: boolean
-          call_made_date?: string | null
+          call_made_date?: string
           showed?: 'Yes' | 'No' | 'Pending'
           status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           created_at?: string
@@ -50,9 +50,9 @@ export interface Database {
           demo_date?: string
           demo_time?: string
           email_sent?: boolean
-          email_sent_date?: string | null
+          email_sent_date?: string
           call_made?: boolean
-          call_made_date?: string | null
+          call_made_date?: string
           showed?: 'Yes' | 'No' | 'Pending'
           status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
           created_at?: string
