@@ -260,7 +260,9 @@ export default function Dashboard() {
       demo_date: formatDateTime(nextWeek),
       demo_time: '09:00:00',
       email_sent: false,
+      email_sent_date: formatDateTime(now),
       call_made: false,
+      call_made_date: formatDateTime(now),
       showed: 'Pending' as const,
       status: 'Pending' as const
     };
