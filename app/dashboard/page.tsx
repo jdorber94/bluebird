@@ -8,6 +8,7 @@ import ProfileMenu from '../components/ProfileMenu';
 import { getDemos, updateDemo, createDemo, deleteDemo, migrateDemosTable, getCurrentUser } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Database } from '@/lib/database.types';
+import { supabase } from '@/lib/supabase';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
 
@@ -257,20 +258,34 @@ export default function Dashboard() {
       name: 'New Demo',
       date_booked: formatDateTime(now),
       demo_date: formatDateTime(nextWeek),
-      demo_time: '09:00:00', // Make sure time format matches what the database expects
+      demo_time: '09:00:00',
       email_sent: false,
       call_made: false,
       showed: 'Pending' as const,
       status: 'Pending' as const
     };
 
-    console.log('Adding new demo:', newDemo);
+    console.log('Attempting to add new demo:', newDemo);
 
     try {
+      // First check if we're authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('Not authenticated');
+        alert('Please sign in to add demos');
+        router.push('/login');
+        return;
+      }
+
       const { data, error } = await createDemo(newDemo);
       if (error) {
         console.error('Error creating demo:', error);
-        alert('Failed to create demo. Please try again.');
+        if (error.message.includes('not authenticated')) {
+          alert('Your session has expired. Please sign in again.');
+          router.push('/login');
+          return;
+        }
+        alert(`Failed to create demo: ${error.message}`);
         return;
       }
       if (data) {
@@ -287,7 +302,7 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Error creating demo:', err);
-      alert('Failed to create demo. Please try again.');
+      alert('An unexpected error occurred. Please try again.');
     }
   };
 

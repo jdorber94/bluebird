@@ -66,13 +66,21 @@ export const getDemos = async () => {
 };
 
 export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
-  const user = await getCurrentUser();
-  if (!user) {
-    console.error('User not authenticated when trying to create demo');
-    return { data: null, error: new Error('User not authenticated') };
-  }
-
   try {
+    // Get the current user and log the result
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Auth check result:', { user, authError });
+
+    if (authError) {
+      console.error('Auth error:', authError);
+      return { data: null, error: authError };
+    }
+
+    if (!user) {
+      console.error('No user found');
+      return { data: null, error: new Error('User not authenticated') };
+    }
+
     const now = new Date().toISOString();
     const demoData: Omit<DemoInsert, 'id'> = {
       ...demo,
@@ -87,6 +95,18 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
 
     console.log('Creating demo with data:', demoData);
 
+    // First check if we can query the demos table
+    const { error: testError } = await supabase
+      .from('demos')
+      .select('id')
+      .limit(1);
+
+    if (testError) {
+      console.error('Test query error:', testError);
+      return { data: null, error: testError };
+    }
+
+    // Then try to insert the demo
     const { data, error } = await supabase
       .from('demos')
       .insert([demoData])
@@ -95,9 +115,11 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
 
     if (error) {
       console.error('Error creating demo:', error);
+      return { data: null, error };
     }
     
-    return { data, error };
+    console.log('Demo created successfully:', data);
+    return { data, error: null };
   } catch (err) {
     console.error('Unexpected error in createDemo:', err);
     return { data: null, error: err as Error };
