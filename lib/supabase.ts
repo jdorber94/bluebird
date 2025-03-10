@@ -80,8 +80,6 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
       email_sent: false,
       call_made: false,
       showed: 'Pending',
-      email_sent_date: now,
-      call_made_date: now,
       created_at: now,
       updated_at: now
     };

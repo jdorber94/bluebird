@@ -126,12 +126,10 @@ export default function Dashboard() {
     field: 'email_sent' | 'call_made'
   ) => {
     const checked = e.target.checked;
-    const now = new Date().toISOString();
     
-    // Update both the checkbox and the corresponding date
+    // Update only the checkbox state
     const updates = {
-      [field]: checked,
-      [`${field}_date`]: now  // Always set a date, even when unchecking
+      [field]: checked
     };
     
     // Find the demo and update it locally first
@@ -165,10 +163,7 @@ export default function Dashboard() {
       return new Date(date).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
+        year: 'numeric'
       });
     } catch (e) {
       return '';
@@ -484,7 +479,12 @@ export default function Dashboard() {
                                     />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {demo.email_sent ? formatDate(demo.email_sent_date) : ''}
+                                    <EditableCell
+                                      value={demo.email_sent_date || ''}
+                                      onChange={(value) => handleUpdate(demo.id, 'email_sent_date', value)}
+                                      type="date"
+                                      className="text-sm text-gray-500"
+                                    />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-center">
                                     <input 
@@ -496,7 +496,12 @@ export default function Dashboard() {
                                     />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {demo.call_made ? formatDate(demo.call_made_date) : ''}
+                                    <EditableCell
+                                      value={demo.call_made_date || ''}
+                                      onChange={(value) => handleUpdate(demo.id, 'call_made_date', value)}
+                                      type="date"
+                                      className="text-sm text-gray-500"
+                                    />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-center">
                                     <button
