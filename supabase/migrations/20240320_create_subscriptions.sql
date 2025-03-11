@@ -1,3 +1,12 @@
+-- Create the set_updated_at function if it doesn't exist
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = timezone('utc'::text, now());
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Create subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -17,6 +26,10 @@ ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 -- Create policies
 CREATE POLICY "Users can view own subscription" ON subscriptions FOR SELECT
   USING (auth.uid() = user_id);
+
+-- Add INSERT policy for the trigger
+CREATE POLICY "System can create subscriptions" ON subscriptions FOR INSERT
+  WITH CHECK (true);
 
 -- Create a trigger to set updated_at on update
 CREATE TRIGGER set_subscriptions_updated_at

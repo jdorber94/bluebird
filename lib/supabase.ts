@@ -51,6 +51,7 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
 
   try {
     // First get the user's subscription status
+    console.log('Fetching subscription data for user:', user.id);
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*')
@@ -59,11 +60,17 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
 
     if (subscriptionError) {
       console.error('Error fetching subscription:', subscriptionError);
+      if (subscriptionError.message.includes('does not exist')) {
+        console.error('Subscriptions table may not exist or RLS policies are not set up correctly');
+      }
       return { data: null, error: subscriptionError };
     }
 
+    console.log('Subscription data:', subscriptionData);
+
     // Determine if user is on free plan
     const isFreeUser = !subscriptionData || subscriptionData.plan_type === 'free';
+    console.log('Is free user:', isFreeUser);
 
     // Get demos with appropriate limit
     const query = supabase
@@ -74,6 +81,7 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
 
     // Apply limit for free users
     if (isFreeUser) {
+      console.log('Applying 10 demo limit for free user');
       query.limit(10);
     }
 
@@ -81,6 +89,11 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
     
     if (error) {
       console.error('Error fetching demos:', error);
+      if (error.message.includes('does not exist')) {
+        console.error('Demos table may not exist or RLS policies are not set up correctly');
+      }
+    } else {
+      console.log('Successfully fetched demos:', data?.length || 0, 'demos');
     }
     
     return { 

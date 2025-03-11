@@ -46,7 +46,15 @@ export default function ProfilePage() {
           .single();
 
         console.log('Profile fetch result:', { profileData, profileError });
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile error details:', {
+            message: profileError.message,
+            hint: profileError.hint,
+            details: profileError.details,
+            code: profileError.code
+          });
+          throw profileError;
+        }
         setProfile(profileData);
 
         // Load subscription
@@ -58,7 +66,15 @@ export default function ProfilePage() {
           .single();
 
         console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
-        if (subscriptionError) throw subscriptionError;
+        if (subscriptionError) {
+          console.error('Subscription error details:', {
+            message: subscriptionError.message,
+            hint: subscriptionError.hint,
+            details: subscriptionError.details,
+            code: subscriptionError.code
+          });
+          throw subscriptionError;
+        }
         setSubscription(subscriptionData);
       } catch (err) {
         console.error('Error loading profile:', err);
