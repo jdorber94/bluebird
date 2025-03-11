@@ -14,10 +14,12 @@ export const supabase = createBrowserClient<Database>(
 
 // Authentication functions
 export const signUp = async (email: string, password: string) => {
+  console.log('Starting signup process for:', email);
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
+  console.log('Signup result:', { data, error });
   return { data, error };
 };
 
@@ -163,8 +165,14 @@ export const deleteDemo = async (id: string) => {
 
 // Profile functions
 export async function getProfile() {
+  console.log('Fetching profile...');
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) throw userError;
+  console.log('Auth user result:', { user, userError });
+  
+  if (userError || !user) {
+    console.error('Auth error or no user:', userError);
+    throw userError;
+  }
 
   const { data, error } = await supabase
     .from('profiles')
@@ -172,7 +180,11 @@ export async function getProfile() {
     .eq('id', user.id)
     .single();
 
-  if (error) throw error;
+  console.log('Profile query result:', { data, error });
+  if (error) {
+    console.error('Profile fetch error:', error);
+    throw error;
+  }
   return data;
 }
 

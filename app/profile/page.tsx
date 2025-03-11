@@ -27,30 +27,37 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        console.log('Loading profile page...');
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('Auth check result:', { user });
         
         if (!user) {
+          console.log('No user found, redirecting to login');
           router.push('/login');
           return;
         }
 
         // Load profile
+        console.log('Fetching profile data...');
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
 
+        console.log('Profile fetch result:', { profileData, profileError });
         if (profileError) throw profileError;
         setProfile(profileData);
 
         // Load subscription
+        console.log('Fetching subscription data...');
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
+        console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
         if (subscriptionError) throw subscriptionError;
         setSubscription(subscriptionData);
       } catch (err) {
@@ -99,7 +106,12 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">Loading profile...</div>
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -109,7 +121,15 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-red-600">{error}</div>
+          <div className="text-center">
+            <div className="text-red-600 mb-4">{error}</div>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
