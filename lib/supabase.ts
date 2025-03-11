@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { Database } from '@/lib/database.types';
+import { Database, GetDemosResponse } from '@/lib/database.types';
 import { createClient } from '@supabase/supabase-js';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
@@ -42,7 +42,7 @@ export const getCurrentUser = async () => {
 };
 
 // Demo management functions
-export const getDemos = async () => {
+export const getDemos = async (): Promise<GetDemosResponse> => {
   const user = await getCurrentUser();
   if (!user) {
     console.error('User not authenticated when trying to get demos');
@@ -50,21 +50,61 @@ export const getDemos = async () => {
   }
 
   try {
-    const { data, error } = await supabase
+    // First get the user's subscription status
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (subscriptionError) {
+      console.error('Error fetching subscription:', subscriptionError);
+      return { data: null, error: subscriptionError };
+    }
+
+    // Determine if user is on free plan
+    const isFreeUser = !subscriptionData || subscriptionData.plan_type === 'free';
+
+    // Get demos with appropriate limit
+    const query = supabase
       .from('demos')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
+
+    // Apply limit for free users
+    if (isFreeUser) {
+      query.limit(10);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       console.error('Error fetching demos:', error);
     }
     
-    return { data, error };
+    return { 
+      data, 
+      error,
+      subscription: {
+        isFreeUser,
+        plan: subscriptionData?.plan_type || 'free',
+        totalCount: isFreeUser ? await getTotalDemoCount(user.id) : data?.length || 0
+      }
+    };
   } catch (err) {
     console.error('Unexpected error in getDemos:', err);
     return { data: null, error: err as Error };
   }
+};
+
+// Helper function to get total demo count
+const getTotalDemoCount = async (userId: string) => {
+  const { count } = await supabase
+    .from('demos')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  return count || 0;
 };
 
 export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {

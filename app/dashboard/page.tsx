@@ -16,6 +16,11 @@ export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<{
+    isFreeUser: boolean;
+    plan: string;
+    totalCount: number;
+  } | null>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,13 +78,14 @@ export default function Dashboard() {
 
   const loadDemos = async () => {
     try {
-      const { data, error } = await getDemos();
+      const { data, error, subscription: subData } = await getDemos();
       if (error) {
         console.error('Error loading demos:', error);
         setError('Failed to load demos. Please try refreshing the page.');
         setDemos([]);
       } else {
         setError(null);
+        setSubscription(subData || null);
         // Sort demos by demo_date, with earliest dates first
         const sortedDemos = (data || []).sort((a, b) => {
           // Handle null dates by putting them at the end
@@ -247,6 +253,17 @@ export default function Dashboard() {
   };
 
   const handleAddDemo = async () => {
+    // Check if free user has reached limit
+    if (subscription?.isFreeUser && subscription.totalCount >= 10) {
+      const shouldUpgrade = window.confirm(
+        'You have reached the limit of 10 demos for free accounts. Would you like to upgrade to premium for unlimited demos?'
+      );
+      if (shouldUpgrade) {
+        router.push('/profile'); // Redirect to profile page where they can upgrade
+      }
+      return;
+    }
+
     const now = new Date();
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
@@ -353,7 +370,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 p-4 flex flex-col transition-all duration-300 ease-in-out relative`}>
         <div className="flex items-center justify-between mb-8">
@@ -409,6 +426,29 @@ export default function Dashboard() {
               Add Demo
             </button>
           </div>
+
+          {subscription?.isFreeUser && subscription.totalCount > 0 && (
+            <div className="p-4 md:p-8 mt-16 mb-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-blue-800">
+                    {subscription.totalCount >= 10 
+                      ? 'You have reached the limit of 10 demos for free accounts.' 
+                      : `You have used ${subscription.totalCount} of 10 available demos.`}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Upgrade to premium for unlimited demos and advanced features.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="p-4 md:p-8 mt-16">
             {/* Demo Table */}

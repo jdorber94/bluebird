@@ -131,4 +131,18 @@ export interface Database {
       [_ in never]: never
     }
   }
+}
+
+export type Demo = Database['public']['Tables']['demos']['Row'];
+
+export interface SubscriptionInfo {
+  isFreeUser: boolean;
+  plan: 'free' | 'pro' | 'enterprise';
+  totalCount: number;
+}
+
+export interface GetDemosResponse {
+  data: Demo[] | null;
+  error: Error | null;
+  subscription?: SubscriptionInfo;
 } 
