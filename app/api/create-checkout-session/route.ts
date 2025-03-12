@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/lib/database.types';
 
 // Initialize Stripe
@@ -10,33 +10,56 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
-  // Parse request body
-  const { priceId, planType } = await req.json();
-  
-  // Get current user from Supabase
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-  
-  // Get user's profile to include their name in Stripe
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('id', user.id)
-    .single();
-  
   try {
+    // Parse request body
+    const { priceId, planType } = await req.json();
+    
+    // Create server-side Supabase client with cookie handling
+    const cookieStore = cookies();
+    
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name: string, options: any) {
+            cookieStore.delete(name);
+          },
+        },
+      }
+    );
+
+    // Get the session using the server client
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('Session error:', sessionError);
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    // Get user's profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    }
+    
     // Look up the user in Stripe, or create if they don't exist
     let customer: Stripe.Customer;
     
     const existingCustomers = await stripe.customers.list({
-      email: user.email,
+      email: session.user.email,
       limit: 1,
     });
     
@@ -44,16 +67,16 @@ export async function POST(req: Request) {
       customer = existingCustomers.data[0];
     } else {
       customer = await stripe.customers.create({
-        email: user.email,
-        name: profile?.full_name || user.email,
+        email: session.user.email,
+        name: profile?.full_name || session.user.email,
         metadata: {
-          supabaseUid: user.id,
+          supabaseUid: session.user.id,
         },
       });
     }
     
     // Create a checkout session
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       customer: customer.id,
       line_items: [
         {
@@ -65,13 +88,13 @@ export async function POST(req: Request) {
       success_url: `${req.headers.get('origin')}/profile?checkout=success`,
       cancel_url: `${req.headers.get('origin')}/profile?checkout=canceled`,
       metadata: {
-        userId: user.id,
+        userId: session.user.id,
         planType,
       },
     });
     
     // Return the checkout session URL
-    return NextResponse.json({ sessionUrl: session.url });
+    return NextResponse.json({ sessionUrl: checkoutSession.url });
   } catch (error) {
     console.error('Stripe checkout error:', error);
     return NextResponse.json(

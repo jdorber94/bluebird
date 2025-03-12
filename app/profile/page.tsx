@@ -113,10 +113,29 @@ export default function ProfilePage() {
   const handleUpgrade = async () => {
     try {
       setCheckoutLoading(true);
+      
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please try logging in again.');
+        router.push('/login');
+        return;
+      }
+      
+      if (!session) {
+        toast.error('Please log in to upgrade your subscription');
+        router.push('/login');
+        return;
+      }
+      
       const priceId = getPriceId();
       
       if (!priceId) {
-        throw new Error('Price ID not found');
+        console.error('Price ID not found in environment variables');
+        toast.error('Configuration error. Please contact support.');
+        return;
       }
       
       // Create checkout session
@@ -129,7 +148,13 @@ export default function ProfilePage() {
           priceId,
           planType: 'premium',
         }),
+        credentials: 'include', // Important: include credentials
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
       
       const { sessionUrl, error } = await response.json();
       
@@ -137,16 +162,15 @@ export default function ProfilePage() {
         throw new Error(error);
       }
       
-      // Redirect to Stripe Checkout
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error('Failed to load Stripe');
+      if (!sessionUrl) {
+        throw new Error('No checkout URL returned');
       }
       
+      // Redirect to Stripe Checkout
       window.location.href = sessionUrl;
     } catch (err) {
       console.error('Error initiating checkout:', err);
-      toast.error('Failed to start checkout process');
+      toast.error(err instanceof Error ? err.message : 'Failed to start checkout process');
     } finally {
       setCheckoutLoading(false);
     }
