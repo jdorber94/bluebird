@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getStripe, getPriceId } from '@/lib/stripe';
@@ -19,6 +19,26 @@ interface Subscription {
   current_period_end: string;
 }
 
+// Separate client component for checkout status handling
+function CheckoutStatus() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast.success('Subscription updated successfully!');
+      router.replace('/profile'); // Remove query params
+    } else if (checkoutStatus === 'canceled') {
+      toast.error('Checkout was canceled.');
+      router.replace('/profile'); // Remove query params
+    }
+  }, [router, searchParams]);
+
+  return null;
+}
+
+// Main profile component
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -26,7 +46,6 @@ export default function ProfilePage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -89,17 +108,7 @@ export default function ProfilePage() {
     };
 
     loadProfile();
-
-    // Check for successful checkout
-    const checkoutStatus = searchParams.get('checkout');
-    if (checkoutStatus === 'success') {
-      toast.success('Subscription updated successfully!');
-      router.replace('/profile'); // Remove query params
-    } else if (checkoutStatus === 'canceled') {
-      toast.error('Checkout was canceled.');
-      router.replace('/profile'); // Remove query params
-    }
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleUpgrade = async () => {
     try {
@@ -205,6 +214,10 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      <Suspense fallback={null}>
+        <CheckoutStatus />
+      </Suspense>
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Section */}
         <div className="bg-white shadow rounded-lg mb-8">
