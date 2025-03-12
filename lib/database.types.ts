@@ -137,7 +137,7 @@ export type Demo = Database['public']['Tables']['demos']['Row'];
 
 export interface SubscriptionInfo {
   isFreeUser: boolean;
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: 'free' | 'premium';
   totalCount: number;
 }
 

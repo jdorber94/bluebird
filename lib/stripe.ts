@@ -10,8 +10,6 @@ export const getStripe = () => {
   return stripePromise;
 };
 
-export const getPriceId = (planType: 'pro' | 'enterprise') => {
-  return planType === 'pro'
-    ? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
-    : process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID;
+export const getPriceId = () => {
+  return process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
 }; 

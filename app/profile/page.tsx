@@ -14,7 +14,7 @@ interface Profile {
 }
 
 interface Subscription {
-  plan_type: 'free' | 'pro' | 'enterprise';
+  plan_type: 'free' | 'premium';
   status: 'active' | 'cancelled' | 'expired';
   current_period_end: string;
 }
@@ -101,13 +101,13 @@ export default function ProfilePage() {
     }
   }, [router, searchParams]);
 
-  const handleUpgrade = async (planType: 'pro' | 'enterprise') => {
+  const handleUpgrade = async () => {
     try {
       setCheckoutLoading(true);
-      const priceId = getPriceId(planType);
+      const priceId = getPriceId();
       
       if (!priceId) {
-        throw new Error(`Price ID not found for plan ${planType}`);
+        throw new Error('Price ID not found');
       }
       
       // Create checkout session
@@ -118,7 +118,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           priceId,
-          planType,
+          planType: 'premium',
         }),
       });
       
@@ -264,11 +264,11 @@ export default function ProfilePage() {
             <div className="space-y-4">
               {subscription?.plan_type === 'free' && (
                 <button
-                  onClick={() => handleUpgrade('pro')}
+                  onClick={handleUpgrade}
                   disabled={checkoutLoading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {checkoutLoading ? 'Processing...' : 'Upgrade to Pro'}
+                  {checkoutLoading ? 'Processing...' : 'Upgrade Now'}
                 </button>
               )}
               
@@ -285,7 +285,7 @@ export default function ProfilePage() {
             {/* Plan Comparison */}
             <div className="mt-8 border-t border-gray-200 pt-8">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Free Plan */}
                 <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'free' ? 'ring-2 ring-blue-500' : ''}`}>
                   <h5 className="text-lg font-medium text-gray-900">Free</h5>
@@ -305,19 +305,11 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Basic analytics</span>
                     </li>
                   </ul>
-                  
-                  {subscription?.plan_type !== 'free' && (
-                    <div className="mt-6">
-                      <span className="block w-full text-center py-2 text-sm text-gray-500">
-                        Current Plan
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                {/* Pro Plan */}
-                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'pro' ? 'ring-2 ring-blue-500' : ''}`}>
-                  <h5 className="text-lg font-medium text-gray-900">Pro</h5>
+                {/* Premium Plan */}
+                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'premium' ? 'ring-2 ring-blue-500' : ''}`}>
+                  <h5 className="text-lg font-medium text-gray-900">Premium</h5>
                   <p className="mt-2 text-sm text-gray-500">For growing teams</p>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$29</p>
                   <ul className="mt-6 space-y-4">
@@ -342,60 +334,17 @@ export default function ProfilePage() {
                   </ul>
                   
                   <div className="mt-6">
-                    {subscription?.plan_type === 'pro' ? (
+                    {subscription?.plan_type === 'premium' ? (
                       <span className="block w-full text-center py-2 text-sm text-gray-500">
                         Current Plan
                       </span>
                     ) : (
                       <button
-                        onClick={() => handleUpgrade('pro')}
+                        onClick={handleUpgrade}
                         disabled={checkoutLoading}
                         className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {checkoutLoading ? 'Processing...' : 'Select Plan'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Enterprise Plan */}
-                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'enterprise' ? 'ring-2 ring-blue-500' : ''}`}>
-                  <h5 className="text-lg font-medium text-gray-900">Enterprise</h5>
-                  <p className="mt-2 text-sm text-gray-500">For large organizations</p>
-                  <p className="mt-4 text-3xl font-bold text-gray-900">$99</p>
-                  <ul className="mt-6 space-y-4">
-                    <li className="flex items-start">
-                      <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="ml-3 text-sm text-gray-500">Everything in Pro</span>
-                    </li>
-                    <li className="flex items-start">
-                      <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="ml-3 text-sm text-gray-500">Dedicated support</span>
-                    </li>
-                    <li className="flex items-start">
-                      <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="ml-3 text-sm text-gray-500">Custom integrations</span>
-                    </li>
-                  </ul>
-                  
-                  <div className="mt-6">
-                    {subscription?.plan_type === 'enterprise' ? (
-                      <span className="block w-full text-center py-2 text-sm text-gray-500">
-                        Current Plan
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleUpgrade('enterprise')}
-                        disabled={checkoutLoading}
-                        className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {checkoutLoading ? 'Processing...' : 'Select Plan'}
+                        {checkoutLoading ? 'Processing...' : 'Upgrade Now'}
                       </button>
                     )}
                   </div>
