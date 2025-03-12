@@ -27,7 +27,11 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Create a profile entry
   INSERT INTO public.profiles (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'full_name', new.email)
+  );
   
   -- Create a subscription entry
   INSERT INTO public.subscriptions (
@@ -68,8 +72,16 @@ CREATE POLICY "Users can update their own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
 
+CREATE POLICY "Users can create their own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Users can view their own subscription"
   ON subscriptions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own subscription"
+  ON subscriptions FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Optional: Allow authenticated users to create demo entries
@@ -85,4 +97,26 @@ CREATE POLICY "Users can view their own demos"
 -- Optional: Allow users to update their own demos
 CREATE POLICY "Users can update their own demos"
   ON demos FOR UPDATE
-  USING (auth.uid() = user_id); 
+  USING (auth.uid() = user_id);
+
+-- Create a profile for existing users if they don't have one
+INSERT INTO public.profiles (id, email, full_name)
+SELECT 
+  id,
+  email,
+  COALESCE(raw_user_meta_data->>'full_name', email)
+FROM auth.users
+WHERE id NOT IN (SELECT id FROM public.profiles)
+ON CONFLICT (id) DO NOTHING;
+
+-- Create subscriptions for existing users if they don't have one
+INSERT INTO public.subscriptions (user_id, plan_type, status, current_period_start, current_period_end)
+SELECT 
+  id,
+  'free',
+  'active',
+  NOW(),
+  NOW() + INTERVAL '30 days'
+FROM auth.users
+WHERE id NOT IN (SELECT user_id FROM public.subscriptions)
+ON CONFLICT (id) DO NOTHING; 
