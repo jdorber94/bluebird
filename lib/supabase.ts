@@ -52,23 +52,46 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
   try {
     // First get the user's subscription status
     console.log('Fetching subscription data for user:', user.id);
-    const { data: subscriptionData, error: subscriptionError } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (subscriptionError) {
-      console.error('Error fetching subscription:', subscriptionError);
-      if (subscriptionError.message.includes('does not exist')) {
-        console.error('Subscriptions table may not exist or RLS policies are not set up correctly');
-      }
-      return { data: null, error: subscriptionError };
+    let subscriptionData;
+    let subscriptionError;
+    
+    try {
+      const result = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
+      
+      subscriptionData = result.data;
+      subscriptionError = result.error;
+    } catch (err) {
+      console.error('Error in subscription query:', err);
+      subscriptionError = err;
     }
 
-    console.log('Subscription data:', subscriptionData);
+    // If there's no subscription found, create a default free subscription
+    if (!subscriptionData && !subscriptionError) {
+      console.log('No subscription found, creating default free subscription');
+      const { data: newSubscription, error: createError } = await supabase
+        .from('subscriptions')
+        .insert([{
+          user_id: user.id,
+          plan_type: 'free',
+          status: 'active',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        }])
+        .select()
+        .single();
 
-    // Determine if user is on free plan
+      if (!createError) {
+        subscriptionData = newSubscription;
+      } else {
+        console.error('Error creating default subscription:', createError);
+      }
+    }
+
+    // Determine if user is on free plan - default to free if any issues
     const isFreeUser = !subscriptionData || subscriptionData.plan_type === 'free';
     console.log('Is free user:', isFreeUser);
 
