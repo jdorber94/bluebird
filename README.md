@@ -102,6 +102,46 @@ A web application designed to help SDRs (Sales Development Representatives) impr
 
 This project is licensed under the ISC License - see the LICENSE file for details.
 
+## Stripe Integration Setup
+
+To set up the Stripe integration for premium subscriptions:
+
+1. Create a Stripe account at [stripe.com](https://stripe.com)
+2. Navigate to the Stripe Dashboard
+3. Create two products:
+   - **Pro Plan**: $29/month recurring
+   - **Enterprise Plan**: $99/month recurring
+4. Note the price IDs for each product and update them in your `.env.local` file:
+   ```
+   NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_123...
+   NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID=price_456...
+   ```
+5. Set up webhook forwarding for local testing:
+   - Install the Stripe CLI: [https://stripe.com/docs/stripe-cli](https://stripe.com/docs/stripe-cli)
+   - Run `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+   - Update your `.env.local` with the webhook secret:
+     ```
+     STRIPE_WEBHOOK_SECRET=whsec_123...
+     ```
+
+## Testing Subscriptions
+
+To test the subscription flow:
+
+1. Use Stripe test card numbers:
+   - Success: `4242 4242 4242 4242`
+   - Decline: `4000 0000 0000 0002`
+2. For all test cards, use any future expiration date, any 3-digit CVC, and any postal code.
+3. After successful checkout, you'll be redirected back to the profile page with your updated subscription.
+
+## Managing Subscriptions
+
+Stripe provides a customer portal for subscription management. This can be integrated by:
+
+1. Creating a portal link in Stripe
+2. Redirecting the user to this link when they want to manage their subscription
+3. Setting up a return URL for when the user is done with the portal
+
 ## Acknowledgments
 
 - Inspired by the needs of SDRs to improve demo show rates

@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { getStripe, getPriceId } from '@/lib/stripe';
+import { toast } from 'react-hot-toast';
 
 interface Profile {
   id: string;
@@ -21,8 +23,10 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -85,11 +89,58 @@ export default function ProfilePage() {
     };
 
     loadProfile();
-  }, [router]);
 
-  const handleUpgrade = async () => {
-    // TODO: Implement Stripe integration
-    alert('Stripe integration coming soon!');
+    // Check for successful checkout
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast.success('Subscription updated successfully!');
+      router.replace('/profile'); // Remove query params
+    } else if (checkoutStatus === 'canceled') {
+      toast.error('Checkout was canceled.');
+      router.replace('/profile'); // Remove query params
+    }
+  }, [router, searchParams]);
+
+  const handleUpgrade = async (planType: 'pro' | 'enterprise') => {
+    try {
+      setCheckoutLoading(true);
+      const priceId = getPriceId(planType);
+      
+      if (!priceId) {
+        throw new Error(`Price ID not found for plan ${planType}`);
+      }
+      
+      // Create checkout session
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          planType,
+        }),
+      });
+      
+      const { sessionUrl, error } = await response.json();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      // Redirect to Stripe Checkout
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+      
+      window.location.href = sessionUrl;
+    } catch (err) {
+      console.error('Error initiating checkout:', err);
+      toast.error('Failed to start checkout process');
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   const handleCancel = async () => {
@@ -112,6 +163,7 @@ export default function ProfilePage() {
         .single();
         
       setSubscription(data);
+      toast.success('Your subscription will be canceled at the end of the billing period.');
     } catch (err) {
       console.error('Error cancelling subscription:', err);
       setError('Failed to cancel subscription');
@@ -212,10 +264,11 @@ export default function ProfilePage() {
             <div className="space-y-4">
               {subscription?.plan_type === 'free' && (
                 <button
-                  onClick={handleUpgrade}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => handleUpgrade('pro')}
+                  disabled={checkoutLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Upgrade to Pro
+                  {checkoutLoading ? 'Processing...' : 'Upgrade to Pro'}
                 </button>
               )}
               
@@ -234,7 +287,7 @@ export default function ProfilePage() {
               <h4 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Free Plan */}
-                <div className="border rounded-lg p-6">
+                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'free' ? 'ring-2 ring-blue-500' : ''}`}>
                   <h5 className="text-lg font-medium text-gray-900">Free</h5>
                   <p className="mt-2 text-sm text-gray-500">Perfect for getting started</p>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$0</p>
@@ -252,10 +305,18 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Basic analytics</span>
                     </li>
                   </ul>
+                  
+                  {subscription?.plan_type !== 'free' && (
+                    <div className="mt-6">
+                      <span className="block w-full text-center py-2 text-sm text-gray-500">
+                        Current Plan
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pro Plan */}
-                <div className="border rounded-lg p-6 bg-blue-50 border-blue-200">
+                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'pro' ? 'ring-2 ring-blue-500' : ''}`}>
                   <h5 className="text-lg font-medium text-gray-900">Pro</h5>
                   <p className="mt-2 text-sm text-gray-500">For growing teams</p>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$29</p>
@@ -279,13 +340,29 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Priority support</span>
                     </li>
                   </ul>
+                  
+                  <div className="mt-6">
+                    {subscription?.plan_type === 'pro' ? (
+                      <span className="block w-full text-center py-2 text-sm text-gray-500">
+                        Current Plan
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleUpgrade('pro')}
+                        disabled={checkoutLoading}
+                        className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {checkoutLoading ? 'Processing...' : 'Select Plan'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Enterprise Plan */}
-                <div className="border rounded-lg p-6">
+                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'enterprise' ? 'ring-2 ring-blue-500' : ''}`}>
                   <h5 className="text-lg font-medium text-gray-900">Enterprise</h5>
                   <p className="mt-2 text-sm text-gray-500">For large organizations</p>
-                  <p className="mt-4 text-3xl font-bold text-gray-900">Custom</p>
+                  <p className="mt-4 text-3xl font-bold text-gray-900">$99</p>
                   <ul className="mt-6 space-y-4">
                     <li className="flex items-start">
                       <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,6 +383,22 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Custom integrations</span>
                     </li>
                   </ul>
+                  
+                  <div className="mt-6">
+                    {subscription?.plan_type === 'enterprise' ? (
+                      <span className="block w-full text-center py-2 text-sm text-gray-500">
+                        Current Plan
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleUpgrade('enterprise')}
+                        disabled={checkoutLoading}
+                        className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {checkoutLoading ? 'Processing...' : 'Select Plan'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
