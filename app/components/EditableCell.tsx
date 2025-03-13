@@ -63,13 +63,23 @@ const EditableCell: React.FC<EditableCellProps> = ({
     handleSave();
   };
 
+  const formatDateForInput = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      return '';
+    }
+  };
+
   if (isEditing) {
     return (
       <div className="flex flex-col gap-2">
         <input
           ref={inputRef}
           type={type}
-          value={editValue}
+          value={type === 'date' ? formatDateForInput(editValue) : editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}

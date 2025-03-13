@@ -282,7 +282,9 @@ export default function Dashboard() {
     nextWeek.setDate(nextWeek.getDate() + 7);
     
     // Format as ISO string for timestamp with timezone
-    const formatDateTime = (date: Date) => date.toISOString();
+    const formatDateTime = (date: Date) => {
+      return date.toISOString();
+    };
 
     const newDemo = {
       name: 'New Demo',
@@ -524,7 +526,7 @@ export default function Dashboard() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <EditableCell
-                                      value={demo.date_booked || new Date().toISOString()}
+                                      value={formatDate(demo.date_booked)}
                                       onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
                                       type="date"
                                       className="text-sm text-gray-500"
@@ -532,7 +534,7 @@ export default function Dashboard() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <EditableCell
-                                      value={demo.demo_date || new Date().toISOString()}
+                                      value={formatDate(demo.demo_date)}
                                       onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
                                       type="date"
                                       className="text-sm text-gray-500"
@@ -557,7 +559,7 @@ export default function Dashboard() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <EditableCell
-                                      value={demo.email_sent_date || ''}
+                                      value={formatDate(demo.email_sent_date)}
                                       onChange={(value) => handleUpdate(demo.id, 'email_sent_date', value)}
                                       type="date"
                                       className="text-sm text-gray-500"
@@ -574,7 +576,7 @@ export default function Dashboard() {
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <EditableCell
-                                      value={demo.call_made_date || ''}
+                                      value={formatDate(demo.call_made_date)}
                                       onChange={(value) => handleUpdate(demo.id, 'call_made_date', value)}
                                       type="date"
                                       className="text-sm text-gray-500"
