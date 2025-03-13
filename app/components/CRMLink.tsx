@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Input } from "@/app/ui/input";
 import { Button } from "@/app/ui/button";
-import { ExternalLink, Plus } from 'lucide-react';
+import { Link, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CRMLinkProps {
@@ -78,7 +78,7 @@ export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
       onClick={() => window.open(url, '_blank')}
       className={cn("text-blue-600 hover:text-blue-800", className)}
     >
-      <ExternalLink className="h-4 w-4" />
+      <Link className="h-4 w-4" />
     </Button>
   );
 } 
