@@ -16,7 +16,6 @@ interface CRMLinkProps {
 export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(url || '');
-  const [showEditIcon, setShowEditIcon] = useState(false);
 
   // Update local state when url prop changes
   useEffect(() => {
@@ -53,23 +52,43 @@ export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
 
   if (!url) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsEditing(true)}
-        className={cn("text-gray-500 hover:text-gray-700", className)}
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
+      <Popover open={isEditing} onOpenChange={setIsEditing}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn("text-gray-500 hover:text-gray-700", className)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Enter URL or CRM ID"
+                className="w-full"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSave}
+              >
+                Add Link
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
     );
   }
 
   return (
-    <div 
-      className="flex items-center gap-1 relative group"
-      onMouseEnter={() => setShowEditIcon(true)}
-      onMouseLeave={() => setShowEditIcon(false)}
-    >
+    <div className="flex items-center gap-1 relative group">
       <Button
         variant="ghost"
         size="sm"
