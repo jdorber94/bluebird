@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Dialog,
   DialogContent,
@@ -5,6 +7,7 @@ import {
   DialogTitle,
 } from "./ui/dialog"
 import RichTextEditor from "./RichTextEditor"
+import { useEffect, useState } from "react"
 
 interface NotesModalProps {
   isOpen: boolean
@@ -15,16 +18,41 @@ interface NotesModalProps {
 }
 
 const NotesModal = ({ isOpen, onClose, notes, onSave, demoTitle }: NotesModalProps) => {
+  const [localNotes, setLocalNotes] = useState(notes)
+  const [saveStatus, setSaveStatus] = useState("")
+
+  useEffect(() => {
+    setLocalNotes(notes)
+  }, [notes])
+
+  const handleChange = (content: string) => {
+    setLocalNotes(content)
+    // Auto-save after a short delay
+    setSaveStatus("Saving...")
+    const timeoutId = setTimeout(() => {
+      onSave(content)
+      setSaveStatus("Saved")
+      setTimeout(() => setSaveStatus(""), 2000)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Notes for {demoTitle}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Notes for {demoTitle}</span>
+            {saveStatus && (
+              <span className="text-sm text-muted-foreground">{saveStatus}</span>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <div className="mt-4">
           <RichTextEditor
-            content={notes}
-            onChange={onSave}
+            content={localNotes}
+            onChange={handleChange}
             className="min-h-[300px]"
           />
         </div>
