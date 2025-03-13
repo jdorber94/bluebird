@@ -34,7 +34,7 @@ const InlineNotes = ({ notes, onSave, demoTitle }: InlineNotesProps) => {
           onClick={() => setIsModalOpen(true)}
         >
           <MessageSquare 
-            className={`h-5 w-5 ${hasNotes ? 'fill-current' : ''}`} 
+            className={`h-5 w-5 ${hasNotes ? 'fill-blue-500 text-blue-500' : ''}`} 
           />
         </Button>
       </Tooltip>
