@@ -18,22 +18,27 @@ export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
 
   // Update local state when url prop changes
   useEffect(() => {
+    console.log('CRMLink: URL prop changed:', { oldValue: inputValue, newValue: url });
     setInputValue(url || '');
   }, [url]);
 
   const handleSave = () => {
     let finalUrl = inputValue.trim();
+    console.log('CRMLink: Starting save process with value:', finalUrl);
     
     // If it's just a number, assume it's a CRM ID and construct the full URL
     if (/^\d+$/.test(finalUrl)) {
       finalUrl = `https://crm.example.com/demo/${finalUrl}`;
+      console.log('CRMLink: Converted ID to URL:', finalUrl);
     }
     
     // If it's not empty and doesn't start with http(s), assume https
     if (finalUrl && !finalUrl.startsWith('http')) {
       finalUrl = `https://${finalUrl}`;
+      console.log('CRMLink: Added https:// prefix:', finalUrl);
     }
     
+    console.log('CRMLink: Calling onChange with final URL:', finalUrl);
     onChange(finalUrl || null);
     setIsEditing(false);
   };

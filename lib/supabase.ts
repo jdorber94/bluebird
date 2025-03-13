@@ -207,8 +207,11 @@ export const createDemo = async (demo: Omit<DemoInsert, 'id' | 'user_id'>) => {
 };
 
 export const updateDemo = async (id: string, updates: DemoUpdate) => {
+  console.log('Updating demo:', { id, updates });
+  
   const user = await getCurrentUser();
   if (!user) {
+    console.error('User not authenticated');
     return { data: null, error: new Error('User not authenticated') };
   }
 
@@ -222,6 +225,13 @@ export const updateDemo = async (id: string, updates: DemoUpdate) => {
     .eq('user_id', user.id)
     .select()
     .single();
+
+  if (error) {
+    console.error('Database update error:', error);
+  } else {
+    console.log('Database update successful:', data);
+  }
+  
   return { data, error };
 };
 

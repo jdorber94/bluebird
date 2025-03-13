@@ -105,9 +105,18 @@ export default function Dashboard() {
   };
 
   const handleUpdate = async (id: string, field: keyof Demo, value: any) => {
+    console.log('Handling update:', { id, field, value });
+    
+    if (field === 'url') {
+      console.log('Updating CRM URL:', { id, url: value });
+    }
+    
     // Find the demo and update it locally first
     const demoIndex = demos.findIndex(d => d.id === id);
-    if (demoIndex === -1) return;
+    if (demoIndex === -1) {
+      console.error('Demo not found:', id);
+      return;
+    }
 
     // Create a new array with the updated demo
     const updatedDemos = [...demos];
@@ -115,6 +124,7 @@ export default function Dashboard() {
       ...updatedDemos[demoIndex],
       [field]: value
     };
+    console.log('Updated demo:', updatedDemos[demoIndex]);
 
     // Update the state immediately
     setDemos(updatedDemos);
@@ -127,6 +137,7 @@ export default function Dashboard() {
       setDemos(demos);
       return;
     }
+    console.log('Database update successful for field:', field);
   };
 
   const handleCheckboxChange = async (
