@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/app/ui/input";
 import { Button } from "@/app/ui/button";
 import { Link, Plus } from 'lucide-react';
@@ -15,6 +15,11 @@ interface CRMLinkProps {
 export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(url || '');
+
+  // Update local state when url prop changes
+  useEffect(() => {
+    setInputValue(url || '');
+  }, [url]);
 
   const handleSave = () => {
     let finalUrl = inputValue.trim();
@@ -47,7 +52,7 @@ export default function CRMLink({ url, onChange, className }: CRMLinkProps) {
       <div className={cn("flex items-center gap-2", className)}>
         <Input
           value={inputValue}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           placeholder="Enter URL or CRM ID"
