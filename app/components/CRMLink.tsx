@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Input } from '@/app/components/ui/input';
-import { Button } from '@/app/components/ui/button';
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 import { ExternalLink, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
