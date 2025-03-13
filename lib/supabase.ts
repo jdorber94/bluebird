@@ -313,7 +313,14 @@ export const migrateDemosTable = async () => {
     const { error: urlError } = await supabase.rpc('add_url_column');
     if (urlError) {
       console.error('Error adding URL column:', urlError);
-      return { error: urlError };
+      // Continue with score column migration even if URL column exists
+    }
+
+    // Add score column if it doesn't exist
+    const { error: scoreError } = await supabase.rpc('add_score_column');
+    if (scoreError) {
+      console.error('Error adding score column:', scoreError);
+      return { error: scoreError };
     }
 
     return { error: null };
