@@ -73,6 +73,22 @@ const EditableCell: React.FC<EditableCellProps> = ({
     }
   };
 
+  const formatTimeDisplay = (timeStr: string) => {
+    try {
+      // Handle both HH:mm:ss and HH:mm formats
+      const [hours, minutes] = timeStr.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes), 0);
+      return date.toLocaleTimeString(undefined, { 
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch (e) {
+      return timeStr;
+    }
+  };
+
   if (isEditing) {
     return (
       <div className="flex flex-col gap-2">
@@ -116,7 +132,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   return (
     <div onDoubleClick={handleDoubleClick} className={className}>
-      {value}
+      {type === 'time' ? formatTimeDisplay(value) : value}
     </div>
   );
 };
