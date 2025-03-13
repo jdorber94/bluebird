@@ -292,7 +292,11 @@ export default function ProfilePage() {
                     ? 'Access until: ' 
                     : 'Renews on: '
                   }
-                  {new Date(subscription.current_period_end).toLocaleDateString()}
+                  {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
                 </p>
               )}
             </div>

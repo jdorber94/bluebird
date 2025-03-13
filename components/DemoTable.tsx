@@ -178,12 +178,20 @@ const DemoTable = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {new Date(demo.date_booked).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(demo.date_booked).toLocaleDateString('en-US', { 
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {demoDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {demoDate.toLocaleDateString('en-US', { 
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

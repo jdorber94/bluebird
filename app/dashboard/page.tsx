@@ -168,9 +168,9 @@ export default function Dashboard() {
     if (!date) return '';
     try {
       return new Date(date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     } catch (e) {
       return '';
