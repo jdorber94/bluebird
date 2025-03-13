@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Database } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
 import InlineNotes from '../components/InlineNotes';
+import CRMLink from '../components/CRMLink';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
 
@@ -483,6 +484,7 @@ export default function Dashboard() {
                       <tr>
                         <th className="w-10 px-2"></th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
@@ -522,8 +524,12 @@ export default function Dashboard() {
                                       value={demo.name || ''}
                                       onChange={(value) => handleUpdate(demo.id, 'name', value)}
                                       className="text-sm font-medium text-gray-900"
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <CRMLink
                                       url={demo.url}
-                                      onUrlChange={(url) => handleUpdate(demo.id, 'url', url)}
+                                      onChange={(url) => handleUpdate(demo.id, 'url', url)}
                                     />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">

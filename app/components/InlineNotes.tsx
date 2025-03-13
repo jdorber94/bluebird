@@ -1,8 +1,8 @@
 import { MessageSquare } from "lucide-react"
-import { Button } from "./ui/button"
+import { Button } from "@/app/ui/button"
 import NotesModal from "./NotesModal"
 import { useState } from "react"
-import { Tooltip } from "./ui/tooltip"
+import { Tooltip } from "@/app/ui/tooltip"
 
 interface InlineNotesProps {
   notes: string

@@ -1,6 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { Toggle } from "./ui/toggle"
+import { Toggle } from "@/app/ui/toggle"
 import { Bold, Italic, List, ListOrdered } from "lucide-react"
 import { cn } from "@/lib/utils"
 

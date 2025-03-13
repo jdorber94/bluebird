@@ -5,7 +5,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog"
+  DialogTrigger,
+} from "@/app/ui/dialog"
 import RichTextEditor from "./RichTextEditor"
 import { useEffect, useState } from "react"
 
