@@ -203,6 +203,27 @@ export default function ProfilePage() {
     }
   };
 
+  // Helper function to get ordinal suffix
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    const day = d.getDate();
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).replace(/\d+/, day + getOrdinalSuffix(day));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -292,11 +313,7 @@ export default function ProfilePage() {
                     ? 'Access until: ' 
                     : 'Renews on: '
                   }
-                  {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {formatDate(subscription.current_period_end)}
                 </p>
               )}
             </div>

@@ -163,15 +163,28 @@ export default function Dashboard() {
     }
   };
 
+  // Helper function to get ordinal suffix
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
   // Helper function to format dates
   const formatDate = (date: string | null) => {
     if (!date) return '';
     try {
-      return new Date(date).toLocaleDateString('en-US', {
+      const d = new Date(date);
+      const day = d.getDate();
+      return d.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      });
+      }).replace(/\d+/, day + getOrdinalSuffix(day));
     } catch (e) {
       return '';
     }
@@ -259,9 +272,9 @@ export default function Dashboard() {
         'You have reached the limit of 10 demos for free accounts. Would you like to upgrade to premium for unlimited demos?'
       );
       if (shouldUpgrade) {
-        router.push('/profile'); // Redirect to profile page where they can upgrade
+        router.push('/profile');
+        return;
       }
-      return;
     }
 
     const now = new Date();
@@ -281,7 +294,8 @@ export default function Dashboard() {
       call_made: false,
       call_made_date: formatDateTime(now),
       showed: 'Pending' as const,
-      status: 'Pending' as const
+      status: 'Pending' as const,
+      score: 3
     };
 
     console.log('Attempting to add new demo:', newDemo);

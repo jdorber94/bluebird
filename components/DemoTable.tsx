@@ -100,6 +100,27 @@ const DemoTable = () => {
     }
   };
 
+  // Helper function to get ordinal suffix
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    const day = d.getDate();
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).replace(/\d+/, day + getOrdinalSuffix(day));
+  };
+
   if (loading) {
     return <div className="text-center py-4">Loading demos...</div>;
   }
@@ -178,20 +199,12 @@ const DemoTable = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {new Date(demo.date_booked).toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {formatDate(demo.date_booked)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {demoDate.toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {formatDate(demo.date_of_demo)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
