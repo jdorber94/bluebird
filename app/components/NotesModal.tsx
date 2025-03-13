@@ -40,16 +40,16 @@ const NotesModal = ({ isOpen, onClose, notes, onSave, demoTitle }: NotesModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Notes for {demoTitle}</span>
+      <DialogContent className="sm:max-w-[600px] bg-white">
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle className="flex items-center justify-between text-xl text-slate-900">
+            <span className="font-semibold">Notes for {demoTitle}</span>
             {saveStatus && (
-              <span className="text-sm text-muted-foreground">{saveStatus}</span>
+              <span className="text-sm font-normal text-slate-600">{saveStatus}</span>
             )}
           </DialogTitle>
         </DialogHeader>
-        <div className="mt-4">
+        <div className="mt-4 bg-slate-50 rounded-lg">
           <RichTextEditor
             content={localNotes}
             onChange={handleChange}
