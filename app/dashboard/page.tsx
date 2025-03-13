@@ -9,6 +9,7 @@ import { getDemos, updateDemo, createDemo, deleteDemo, migrateDemosTable, getCur
 import { useRouter } from 'next/navigation';
 import { Database } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
+import InlineNotes from '../components/InlineNotes';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
 
@@ -489,10 +490,11 @@ export default function Dashboard() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Email Date</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Showed</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Score</th>
-                        <th className="w-10"></th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"></th>
                       </tr>
                     </thead>
                     <Droppable droppableId="table" direction="vertical">
@@ -608,6 +610,13 @@ export default function Dashboard() {
                                         <option key={value} value={value}>{value}</option>
                                       ))}
                                     </select>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <InlineNotes
+                                      notes={demo.notes || ''}
+                                      onSave={(notes) => handleUpdate(demo.id, 'notes', notes)}
+                                      demoTitle={demo.name || 'Untitled Demo'}
+                                    />
                                   </td>
                                   <td className="pl-2 pr-4 py-4 whitespace-nowrap text-center">
                                     <ActionMenu 

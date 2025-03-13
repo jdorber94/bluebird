@@ -28,14 +28,15 @@ export interface Database {
           updated_at: string
           position: number
           score: number
+          notes: string
         }
         Insert: {
           id?: string
           name: string
           url?: string | null
-          date_booked?: string
+          date_booked: string
           demo_date: string
-          demo_time: string
+          demo_time?: string
           email_sent?: boolean
           email_sent_date?: string | null
           call_made?: boolean
@@ -47,6 +48,7 @@ export interface Database {
           updated_at?: string
           position?: number
           score?: number
+          notes?: string
         }
         Update: {
           id?: string
@@ -66,6 +68,7 @@ export interface Database {
           updated_at?: string
           position?: number
           score?: number
+          notes?: string
         }
       }
       profiles: {

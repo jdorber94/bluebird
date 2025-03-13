@@ -284,61 +284,24 @@ export async function updateProfile(updates: {
 
 // Migration function to add position column
 export const migrateDemosTable = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: new Error('User not authenticated') };
-  }
-
   try {
-    // First, try to use the RPC function
-    try {
-      await supabase.rpc('add_position_column_if_not_exists');
-    } catch (rpcError) {
-      console.warn('RPC function failed, falling back to direct SQL:', rpcError);
-      
-      // Check if position column exists and add it if it doesn't
-      // This is a fallback if the RPC function fails
-      const { error: alterError } = await supabase.from('demos')
-        .select('position')
-        .limit(1);
-      
-      if (alterError && alterError.message.includes('column "position" does not exist')) {
-        console.log('Position column does not exist, skipping migration');
-        // We'll just continue and let the app handle missing columns gracefully
-      }
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('Auth error or no user:', userError);
+      return { error: userError || new Error('No user found') };
     }
 
-    // Then, update existing rows with sequential positions
-    const { data: demos, error: fetchError } = await supabase
-      .from('demos')
-      .select('id')
-      .order('created_at');
-
-    if (fetchError) {
-      console.error('Error fetching demos:', fetchError);
-      return { error: fetchError };
+    // Add notes column if it doesn't exist
+    const { error: notesError } = await supabase.rpc('add_notes_column');
+    if (notesError) {
+      console.error('Error adding notes column:', notesError);
+      return { error: notesError };
     }
 
-    if (demos && demos.length > 0) {
-      // Update each demo with a position
-      for (let i = 0; i < demos.length; i++) {
-        const { error: updateError } = await supabase
-          .from('demos')
-          .update({ position: i })
-          .eq('id', demos[i].id);
-
-        if (updateError) {
-          console.error('Error updating demo position:', updateError);
-          if (updateError.message.includes('column "position" does not exist')) {
-            break; // Stop trying to update positions if the column doesn't exist
-          }
-        }
-      }
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Migration error:', error);
-    return { error };
+    return { error: null };
+  } catch (err) {
+    console.error('Unexpected error in migrateDemosTable:', err);
+    return { error: err as Error };
   }
 }; 
