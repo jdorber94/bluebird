@@ -12,8 +12,8 @@ export interface Database {
       demos: {
         Row: {
           id: string
-          user_id: string
           name: string
+          url: string | null
           date_booked: string
           demo_date: string
           demo_time: string
@@ -23,14 +23,17 @@ export interface Database {
           call_made_date: string | null
           showed: 'Yes' | 'No' | 'Pending'
           status: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
+          user_id: string
           created_at: string
           updated_at: string
+          position: number
+          score: number
         }
         Insert: {
           id?: string
-          user_id?: string
           name: string
-          date_booked: string
+          url?: string | null
+          date_booked?: string
           demo_date: string
           demo_time: string
           email_sent?: boolean
@@ -39,13 +42,16 @@ export interface Database {
           call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
           status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
+          user_id: string
           created_at?: string
           updated_at?: string
+          position?: number
+          score?: number
         }
         Update: {
           id?: string
-          user_id?: string
           name?: string
+          url?: string | null
           date_booked?: string
           demo_date?: string
           demo_time?: string
@@ -55,8 +61,11 @@ export interface Database {
           call_made_date?: string | null
           showed?: 'Yes' | 'No' | 'Pending'
           status?: 'Accepted' | 'Pending' | 'Cancelled' | 'Rebooked'
+          user_id?: string
           created_at?: string
           updated_at?: string
+          position?: number
+          score?: number
         }
       }
       profiles: {

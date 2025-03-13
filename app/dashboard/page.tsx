@@ -475,6 +475,7 @@ export default function Dashboard() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Showed</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Score</th>
                         <th className="w-10"></th>
                       </tr>
                     </thead>
@@ -503,6 +504,8 @@ export default function Dashboard() {
                                       value={demo.name || ''}
                                       onChange={(value) => handleUpdate(demo.id, 'name', value)}
                                       className="text-sm font-medium text-gray-900"
+                                      url={demo.url}
+                                      onUrlChange={(url) => handleUpdate(demo.id, 'url', url)}
                                     />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
@@ -578,6 +581,17 @@ export default function Dashboard() {
                                     >
                                       {getShowedDisplay(demo.showed)}
                                     </button>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                                    <select
+                                      value={demo.score || 3}
+                                      onChange={(e) => handleUpdate(demo.id, 'score', parseInt(e.target.value))}
+                                      className="block w-20 mx-auto text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                      {[1, 2, 3, 4, 5].map((value) => (
+                                        <option key={value} value={value}>{value}</option>
+                                      ))}
+                                    </select>
                                   </td>
                                   <td className="pl-2 pr-4 py-4 whitespace-nowrap text-center">
                                     <ActionMenu 
