@@ -7,8 +7,13 @@ import { Database } from '@/lib/database.types';
 // This config uses the new format for Next.js 14.2.24
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-// Disable body parsing as we need the raw body for Stripe signature verification
-export const bodyParser = false;
+
+// Configure the route options
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
