@@ -4,16 +4,10 @@ import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
-// This config uses the new format for Next.js 14.2.24
+// Route segment configuration for Next.js 14.2
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-// Configure the route options
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const preferredRegion = 'iad1';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
