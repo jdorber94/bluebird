@@ -89,7 +89,28 @@ export default function ProfilePage() {
           throw profileResult.error;
         }
 
-        if (userResult.error) {
+        // If user record doesn't exist, create it
+        if (userResult.error && userResult.error.code === '42P01') {
+          console.log('Users table not found or user record missing, creating...');
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert([
+              { id: user.id, plan_type: 'free' }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating user record:', createError);
+            throw createError;
+          }
+
+          if (!newUser) {
+            throw new Error('Failed to create user record');
+          }
+
+          userResult.data = newUser;
+        } else if (userResult.error) {
           console.error('User error details:', {
             message: userResult.error.message,
             hint: userResult.error.hint,
@@ -97,6 +118,10 @@ export default function ProfilePage() {
             code: userResult.error.code
           });
           throw userResult.error;
+        }
+
+        if (!userResult.data) {
+          throw new Error('No user data available');
         }
 
         setProfile({
