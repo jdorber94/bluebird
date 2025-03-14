@@ -9,10 +9,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any,
 });
 
-// Initialize Supabase admin client
+// Initialize Supabase admin client with service role key for full access
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key for admin operations
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 );
 
 export async function POST(req: Request) {
@@ -47,54 +53,30 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Session metadata:', session.metadata);
         
-        // Update subscription in database
-        if (session.metadata?.userId && session.metadata?.planType) {
-          const { userId, planType } = session.metadata;
-          console.log('Updating subscription for user:', userId, 'to plan:', planType);
-          
-          // Get subscription details from Stripe
-          const subscriptionId = session.subscription as string;
-          console.log('Fetching subscription details from Stripe. ID:', subscriptionId);
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          
-          // Update subscription in database
-          console.log('Updating subscription in Supabase');
-          const { error: updateError } = await supabase
-            .from('subscriptions')
-            .update({
-              plan_type: planType,
-              status: 'active',
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              stripe_customer_id: subscription.customer as string,
-              stripe_subscription_id: subscription.id,
-              stripe_price_id: subscription.items.data[0].price.id
-            })
-            .eq('user_id', userId);
-
-          if (updateError) {
-            console.error('Error updating subscription in Supabase:', updateError);
-            return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
-          }
-          
-          console.log('Successfully updated subscription in Supabase');
-          
-          // Verify the update
-          const { data: verifyData, error: verifyError } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-            
-          if (verifyError) {
-            console.error('Error verifying subscription update:', verifyError);
-          } else {
-            console.log('Verified subscription data:', verifyData);
-          }
-        } else {
-          console.error('Missing required metadata in session:', session);
+        if (!session.metadata?.userId) {
+          console.error('No userId found in session metadata');
+          return NextResponse.json({ error: 'Missing userId in metadata' }, { status: 400 });
         }
+
+        const userId = session.metadata.userId;
+        const planType = session.metadata.planType || 'premium'; // Default to premium if not specified
+        
+        // Start a transaction to update both subscriptions and users tables
+        const { error: transactionError } = await supabase.rpc('update_user_subscription', {
+          p_user_id: userId,
+          p_plan_type: planType,
+          p_stripe_customer_id: session.customer as string,
+          p_stripe_subscription_id: session.subscription as string,
+          p_current_period_start: new Date(session.created * 1000).toISOString(),
+          p_current_period_end: new Date((session.created + 30 * 24 * 60 * 60) * 1000).toISOString() // 30 days from creation
+        });
+
+        if (transactionError) {
+          console.error('Transaction error:', transactionError);
+          return NextResponse.json({ error: 'Failed to update subscription and user' }, { status: 500 });
+        }
+
+        console.log('Successfully updated user subscription to premium');
         break;
       }
       

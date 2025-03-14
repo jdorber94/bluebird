@@ -11,6 +11,7 @@ interface Profile {
   email: string;
   full_name: string;
   role: string;
+  is_premium: boolean;
 }
 
 interface Subscription {
@@ -60,35 +61,30 @@ export default function ProfilePage() {
           return;
         }
 
-        // Load profile
-        console.log('Fetching profile data...');
+        // Load profile with subscription status from user metadata
+        console.log('Fetching profile and subscription data...');
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
 
-        console.log('Profile fetch result:', { profileData, profileError });
         if (profileError) {
-          console.error('Profile error details:', {
-            message: profileError.message,
-            hint: profileError.hint,
-            details: profileError.details,
-            code: profileError.code
-          });
+          console.error('Profile error details:', profileError);
           throw profileError;
         }
-        setProfile(profileData);
 
-        // Load subscription
-        console.log('Fetching subscription data...');
+        // Load subscription with detailed logging
+        console.log('Fetching subscription details...');
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
-        console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
+        console.log('Subscription data:', subscriptionData);
+        console.log('Subscription error:', subscriptionError);
+
         if (subscriptionError) {
           console.error('Subscription error details:', {
             message: subscriptionError.message,
@@ -98,6 +94,12 @@ export default function ProfilePage() {
           });
           throw subscriptionError;
         }
+
+        // Update state with combined profile and subscription data
+        setProfile({
+          ...profileData,
+          is_premium: subscriptionData?.plan_type === 'premium'
+        });
         setSubscription(subscriptionData);
       } catch (err) {
         console.error('Error loading profile:', err);
