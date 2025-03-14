@@ -21,7 +21,7 @@ interface Subscription {
 }
 
 // Separate client component for checkout status handling
-function CheckoutStatus() {
+function CheckoutStatus({ onCheckoutComplete }: { onCheckoutComplete: () => void }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -29,12 +29,13 @@ function CheckoutStatus() {
     const checkoutStatus = searchParams.get('checkout');
     if (checkoutStatus === 'success') {
       toast.success('Subscription updated successfully!');
+      onCheckoutComplete(); // Trigger a data refresh
       router.replace('/profile'); // Remove query params
     } else if (checkoutStatus === 'canceled') {
       toast.error('Checkout was canceled.');
       router.replace('/profile'); // Remove query params
     }
-  }, [router, searchParams]);
+  }, [router, searchParams, onCheckoutComplete]);
 
   return null;
 }
@@ -48,126 +49,128 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        console.log('Loading profile page...');
-        const { data: { user } } = await supabase.auth.getUser();
-        console.log('Auth check result:', { user });
-        
-        if (!user) {
-          console.log('No user found, redirecting to login');
-          router.push('/login');
-          return;
-        }
+  // Function to load profile and subscription data
+  const loadProfileData = async () => {
+    try {
+      console.log('Loading profile page...');
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Auth check result:', { user });
+      
+      if (!user) {
+        console.log('No user found, redirecting to login');
+        router.push('/login');
+        return;
+      }
 
-        // Load profile and user data
-        console.log('Fetching profile and user data...');
-        const [profileResult, userResult] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('users')
-            .select('plan_type')
-            .eq('id', user.id)
-            .maybeSingle()
-        ]);
-
-        console.log('Profile fetch result:', { profileResult });
-        console.log('User fetch result:', { userResult });
-
-        // If profile doesn't exist, create it
-        if (!profileResult.data) {
-          console.log('Profile not found, creating...');
-          const { data: newProfile, error: createProfileError } = await supabase
-            .from('profiles')
-            .insert([
-              { 
-                id: user.id, 
-                email: user.email,
-                full_name: user.user_metadata?.full_name || user.email,
-                role: 'Demo Manager'
-              }
-            ])
-            .select()
-            .single();
-
-          if (createProfileError) {
-            console.error('Error creating profile record:', createProfileError);
-            throw createProfileError;
-          }
-
-          profileResult.data = newProfile;
-        }
-
-        // If user record doesn't exist, create it
-        if (!userResult.data) {
-          console.log('User record not found, creating...');
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert([
-              { id: user.id, plan_type: 'free' }
-            ])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating user record:', createError);
-            throw createError;
-          }
-
-          userResult.data = newUser;
-        }
-
-        if (!userResult.data) {
-          throw new Error('No user data available');
-        }
-
-        setProfile({
-          ...profileResult.data,
-          plan_type: userResult.data.plan_type
-        });
-
-        // Load subscription
-        console.log('Fetching subscription data...');
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('subscriptions')
+      // Load profile and user data
+      console.log('Fetching profile and user data...');
+      const [profileResult, userResult] = await Promise.all([
+        supabase
+          .from('profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('users')
+          .select('plan_type')
+          .eq('id', user.id)
+          .maybeSingle()
+      ]);
+
+      console.log('Profile fetch result:', { profileResult });
+      console.log('User fetch result:', { userResult });
+
+      // If profile doesn't exist, create it
+      if (!profileResult.data) {
+        console.log('Profile not found, creating...');
+        const { data: newProfile, error: createProfileError } = await supabase
+          .from('profiles')
+          .insert([
+            { 
+              id: user.id, 
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.email,
+              role: 'Demo Manager'
+            }
+          ])
+          .select()
           .single();
 
-        console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
-        if (subscriptionError) {
-          console.error('Subscription error details:', {
-            message: subscriptionError.message,
-            hint: subscriptionError.hint,
-            details: subscriptionError.details,
-            code: subscriptionError.code
-          });
-          throw subscriptionError;
+        if (createProfileError) {
+          console.error('Error creating profile record:', createProfileError);
+          throw createProfileError;
         }
 
-        // Verify plan types match
-        if (subscriptionData.plan_type !== userResult.data.plan_type) {
-          console.warn('Plan type mismatch between users and subscriptions tables:', {
-            userPlan: userResult.data.plan_type,
-            subscriptionPlan: subscriptionData.plan_type
-          });
-        }
-
-        setSubscription(subscriptionData);
-      } catch (err) {
-        console.error('Error loading profile:', err);
-        setError('Failed to load profile information');
-      } finally {
-        setLoading(false);
+        profileResult.data = newProfile;
       }
-    };
 
-    loadProfile();
+      // If user record doesn't exist, create it
+      if (!userResult.data) {
+        console.log('User record not found, creating...');
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert([
+            { id: user.id, plan_type: 'free' }
+          ])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating user record:', createError);
+          throw createError;
+        }
+
+        userResult.data = newUser;
+      }
+
+      if (!userResult.data) {
+        throw new Error('No user data available');
+      }
+
+      setProfile({
+        ...profileResult.data,
+        plan_type: userResult.data.plan_type
+      });
+
+      // Load subscription
+      console.log('Fetching subscription data...');
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
+      if (subscriptionError) {
+        console.error('Subscription error details:', {
+          message: subscriptionError.message,
+          hint: subscriptionError.hint,
+          details: subscriptionError.details,
+          code: subscriptionError.code
+        });
+        throw subscriptionError;
+      }
+
+      // Verify plan types match
+      if (subscriptionData.plan_type !== userResult.data.plan_type) {
+        console.warn('Plan type mismatch between users and subscriptions tables:', {
+          userPlan: userResult.data.plan_type,
+          subscriptionPlan: subscriptionData.plan_type
+        });
+      }
+
+      setSubscription(subscriptionData);
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setError('Failed to load profile information');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadProfileData();
   }, [router]);
 
   const handleUpgrade = async () => {
@@ -319,9 +322,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <Suspense fallback={null}>
-        <CheckoutStatus />
-      </Suspense>
+      <CheckoutStatus onCheckoutComplete={loadProfileData} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Section */}
