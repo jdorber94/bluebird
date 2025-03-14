@@ -11,7 +11,7 @@ interface Profile {
   email: string;
   full_name: string;
   role: string;
-  is_premium: boolean;
+  plan_type: 'free' | 'premium';
 }
 
 interface Subscription {
@@ -61,30 +61,58 @@ export default function ProfilePage() {
           return;
         }
 
-        // Load profile with subscription status from user metadata
-        console.log('Fetching profile and subscription data...');
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        // Load profile and user data
+        console.log('Fetching profile and user data...');
+        const [profileResult, userResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('users')
+            .select('plan_type')
+            .eq('id', user.id)
+            .single()
+        ]);
 
-        if (profileError) {
-          console.error('Profile error details:', profileError);
-          throw profileError;
+        console.log('Profile fetch result:', { profileResult });
+        console.log('User fetch result:', { userResult });
+
+        if (profileResult.error) {
+          console.error('Profile error details:', {
+            message: profileResult.error.message,
+            hint: profileResult.error.hint,
+            details: profileResult.error.details,
+            code: profileResult.error.code
+          });
+          throw profileResult.error;
         }
 
-        // Load subscription with detailed logging
-        console.log('Fetching subscription details...');
+        if (userResult.error) {
+          console.error('User error details:', {
+            message: userResult.error.message,
+            hint: userResult.error.hint,
+            details: userResult.error.details,
+            code: userResult.error.code
+          });
+          throw userResult.error;
+        }
+
+        setProfile({
+          ...profileResult.data,
+          plan_type: userResult.data.plan_type
+        });
+
+        // Load subscription
+        console.log('Fetching subscription data...');
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
-        console.log('Subscription data:', subscriptionData);
-        console.log('Subscription error:', subscriptionError);
-
+        console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
         if (subscriptionError) {
           console.error('Subscription error details:', {
             message: subscriptionError.message,
@@ -95,11 +123,14 @@ export default function ProfilePage() {
           throw subscriptionError;
         }
 
-        // Update state with combined profile and subscription data
-        setProfile({
-          ...profileData,
-          is_premium: subscriptionData?.plan_type === 'premium'
-        });
+        // Verify plan types match
+        if (subscriptionData.plan_type !== userResult.data.plan_type) {
+          console.warn('Plan type mismatch between users and subscriptions tables:', {
+            userPlan: userResult.data.plan_type,
+            subscriptionPlan: subscriptionData.plan_type
+          });
+        }
+
         setSubscription(subscriptionData);
       } catch (err) {
         console.error('Error loading profile:', err);
