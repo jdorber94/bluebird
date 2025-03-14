@@ -18,12 +18,19 @@ CREATE TABLE IF NOT EXISTS public.users (
 -- Enable RLS
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own record" ON public.users;
+DROP POLICY IF EXISTS "Users can update own record" ON public.users;
+
 -- Create policies
 CREATE POLICY "Users can view own record" ON public.users
     FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own record" ON public.users
     FOR UPDATE USING (auth.uid() = id);
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS set_users_updated_at ON public.users;
 
 -- Create a trigger to set updated_at on update
 CREATE TRIGGER set_users_updated_at

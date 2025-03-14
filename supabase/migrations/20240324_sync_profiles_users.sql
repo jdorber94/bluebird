@@ -26,6 +26,9 @@ LEFT JOIN
 WHERE 
     u.id IS NULL;
 
+-- Drop the function if it already exists
+DROP FUNCTION IF EXISTS get_profile_safe(uuid);
+
 -- Finally, ensure the profile page can handle the case where a profile doesn't exist
 -- by creating a function to safely get a profile
 CREATE OR REPLACE FUNCTION get_profile_safe(user_id uuid)
