@@ -4,12 +4,11 @@ import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
-// This config disables the built-in Next.js body parsing
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// This config uses the new format for Next.js 14.2.24
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+// Disable body parsing as we need the raw body for Stripe signature verification
+export const bodyParser = false;
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
