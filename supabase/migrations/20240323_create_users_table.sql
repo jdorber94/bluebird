@@ -1,3 +1,12 @@
+-- Create the set_updated_at function if it doesn't exist
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = timezone('utc'::text, now());
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Create users table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.users (
     id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
