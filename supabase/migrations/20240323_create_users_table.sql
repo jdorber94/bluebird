@@ -32,7 +32,7 @@ CREATE TRIGGER set_users_updated_at
     EXECUTE FUNCTION set_updated_at();
 
 -- Create a trigger to automatically create user records
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION handle_new_user_for_users_table()
 RETURNS trigger AS $$
 BEGIN
     INSERT INTO public.users (id, plan_type)
@@ -41,9 +41,9 @@ BEGIN
 END;
 $$ language plpgsql security definer;
 
--- Create the trigger
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
+-- Create the trigger with a different name to avoid conflict
+DROP TRIGGER IF EXISTS on_auth_user_created_for_users ON auth.users;
+CREATE TRIGGER on_auth_user_created_for_users
     AFTER INSERT ON auth.users
     FOR EACH ROW
-    EXECUTE FUNCTION handle_new_user(); 
+    EXECUTE FUNCTION handle_new_user_for_users_table(); 

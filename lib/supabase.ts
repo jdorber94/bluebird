@@ -264,13 +264,39 @@ export async function getProfile() {
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   console.log('Profile query result:', { data, error });
+  
   if (error) {
     console.error('Profile fetch error:', error);
     throw error;
   }
+  
+  // If profile doesn't exist, create it
+  if (!data) {
+    console.log('Profile not found, creating...');
+    const { data: newProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert([
+        { 
+          id: user.id, 
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email,
+          role: 'Demo Manager'
+        }
+      ])
+      .select()
+      .single();
+      
+    if (createError) {
+      console.error('Error creating profile:', createError);
+      throw createError;
+    }
+    
+    return newProfile;
+  }
+  
   return data;
 }
 
@@ -281,6 +307,33 @@ export async function updateProfile(updates: {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) throw userError;
 
+  // Check if profile exists
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+    
+  if (!existingProfile) {
+    // Create profile if it doesn't exist
+    const { data: newProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert([
+        { 
+          id: user.id, 
+          email: user.email,
+          full_name: updates.full_name || user.user_metadata?.full_name || user.email,
+          role: updates.role || 'Demo Manager'
+        }
+      ])
+      .select()
+      .single();
+      
+    if (createError) throw createError;
+    return newProfile;
+  }
+  
+  // Update existing profile
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)

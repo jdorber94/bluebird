@@ -68,30 +68,44 @@ export default function ProfilePage() {
             .from('profiles')
             .select('*')
             .eq('id', user.id)
-            .single(),
+            .maybeSingle(),
           supabase
             .from('users')
             .select('plan_type')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
         ]);
 
         console.log('Profile fetch result:', { profileResult });
         console.log('User fetch result:', { userResult });
 
-        if (profileResult.error) {
-          console.error('Profile error details:', {
-            message: profileResult.error.message,
-            hint: profileResult.error.hint,
-            details: profileResult.error.details,
-            code: profileResult.error.code
-          });
-          throw profileResult.error;
+        // If profile doesn't exist, create it
+        if (!profileResult.data) {
+          console.log('Profile not found, creating...');
+          const { data: newProfile, error: createProfileError } = await supabase
+            .from('profiles')
+            .insert([
+              { 
+                id: user.id, 
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email,
+                role: 'Demo Manager'
+              }
+            ])
+            .select()
+            .single();
+
+          if (createProfileError) {
+            console.error('Error creating profile record:', createProfileError);
+            throw createProfileError;
+          }
+
+          profileResult.data = newProfile;
         }
 
         // If user record doesn't exist, create it
-        if (userResult.error && userResult.error.code === '42P01') {
-          console.log('Users table not found or user record missing, creating...');
+        if (!userResult.data) {
+          console.log('User record not found, creating...');
           const { data: newUser, error: createError } = await supabase
             .from('users')
             .insert([
@@ -105,19 +119,7 @@ export default function ProfilePage() {
             throw createError;
           }
 
-          if (!newUser) {
-            throw new Error('Failed to create user record');
-          }
-
           userResult.data = newUser;
-        } else if (userResult.error) {
-          console.error('User error details:', {
-            message: userResult.error.message,
-            hint: userResult.error.hint,
-            details: userResult.error.details,
-            code: userResult.error.code
-          });
-          throw userResult.error;
         }
 
         if (!userResult.data) {
