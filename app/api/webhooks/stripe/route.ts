@@ -11,7 +11,7 @@ export const preferredRegion = 'iad1';
 
 // Initialize Stripe with the latest API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
+  apiVersion: '2023-10-16',
 });
 
 // Initialize Supabase admin client with service role key
@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   try {
     // Get raw body for signature verification
     const rawBody = await req.text();
-    console.log('Received webhook request');
+    console.log('Received webhook request with raw body length:', rawBody.length);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
     // Get Stripe signature from headers
     const signature = headers().get('stripe-signature');
@@ -35,18 +36,21 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    console.log('Stripe signature found:', signature.substring(0, 20) + '...');
 
     // Verify the signature and construct event
     let event: Stripe.Event;
     try {
+      console.log('Attempting to verify webhook with secret starting with:', process.env.STRIPE_WEBHOOK_SECRET?.substring(0, 5) + '...');
       event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
-      console.log('Webhook verified. Event type:', event.type);
+      console.log('Webhook verified successfully. Event type:', event.type);
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);
+      console.error('Full error:', err);
       return NextResponse.json(
         { error: 'Webhook signature verification failed' },
         { status: 400 }

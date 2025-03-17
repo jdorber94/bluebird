@@ -11,7 +11,7 @@ interface Profile {
   email: string;
   full_name: string;
   role: string;
-  plan_type: 'free' | 'premium';
+  plan_type: 'free' | 'pro' | 'enterprise';
 }
 
 interface Subscription {
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           priceId,
-          planType: 'premium',
+          planType: 'pro',
         }),
         credentials: 'include', // Important: include credentials
       });

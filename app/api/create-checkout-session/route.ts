@@ -6,7 +6,7 @@ import { Database } from '@/lib/database.types';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as any,
+  apiVersion: '2023-10-16',
 });
 
 export async function POST(req: Request) {
@@ -89,8 +89,14 @@ export async function POST(req: Request) {
       cancel_url: `${req.headers.get('origin')}/profile?checkout=canceled`,
       metadata: {
         userId: session.user.id,
-        planType,
+        planType: 'pro',
       },
+      subscription_data: {
+        metadata: {
+          userId: session.user.id,
+          planType: 'pro',
+        }
+      }
     });
     
     // Return the checkout session URL
