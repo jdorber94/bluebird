@@ -16,7 +16,7 @@ interface Profile {
 }
 
 interface Subscription {
-  plan_type: 'free' | 'premium';
+  plan_type: 'free' | 'pro';
   status: 'active' | 'cancelled' | 'expired';
   current_period_end: string;
 }
@@ -71,114 +71,73 @@ function ProfileContent() {
   // Function to load profile and subscription data
   const loadProfileData = async () => {
     try {
-      console.log('Loading profile page...');
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Auth check result:', { user });
+      console.log('Loading profile data...');
+      setLoading(true);
       
-      if (!user) {
-        console.log('No user found, redirecting to login');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session found, redirecting to login');
         router.push('/login');
         return;
       }
 
-      // Load profile and user data
-      console.log('Fetching profile and user data...');
-      const [profileResult, userResult] = await Promise.all([
+      // Get all necessary data in parallel
+      const [profileResult, userResult, subscriptionResult] = await Promise.all([
         supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
-          .maybeSingle(),
+          .eq('id', session.user.id)
+          .single(),
         supabase
           .from('users')
           .select('plan_type')
-          .eq('id', user.id)
-          .maybeSingle()
+          .eq('id', session.user.id)
+          .single(),
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
       ]);
 
-      console.log('Profile fetch result:', { profileResult });
-      console.log('User fetch result:', { userResult });
-
-      // If profile doesn't exist, create it
-      if (!profileResult.data) {
-        console.log('Profile not found, creating...');
-        const { data: newProfile, error: createProfileError } = await supabase
-          .from('profiles')
-          .insert([
-            { 
-              id: user.id, 
-              email: user.email,
-              full_name: user.user_metadata?.full_name || user.email,
-              role: 'Demo Manager'
-            }
-          ])
-          .select()
-          .single();
-
-        if (createProfileError) {
-          console.error('Error creating profile record:', createProfileError);
-          throw createProfileError;
-        }
-
-        profileResult.data = newProfile;
-      }
-
-      // If user record doesn't exist, create it
-      if (!userResult.data) {
-        console.log('User record not found, creating...');
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert([
-            { id: user.id, plan_type: 'free' }
-          ])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating user record:', createError);
-          throw createError;
-        }
-
-        userResult.data = newUser;
-      }
-
-      if (!userResult.data) {
-        throw new Error('No user data available');
-      }
-
-      setProfile({
-        ...profileResult.data,
-        plan_type: userResult.data.plan_type
+      console.log('Data fetch results:', {
+        profile: profileResult,
+        user: userResult,
+        subscription: subscriptionResult
       });
 
-      // Load subscription
-      console.log('Fetching subscription data...');
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Handle profile data
+      if (profileResult.error && profileResult.error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name || session.user.email,
+            role: 'Demo Manager'
+          }])
+          .select()
+          .single();
 
-      console.log('Subscription fetch result:', { subscriptionData, subscriptionError });
-      if (subscriptionError) {
-        console.error('Subscription error details:', {
-          message: subscriptionError.message,
-          hint: subscriptionError.hint,
-          details: subscriptionError.details,
-          code: subscriptionError.code
-        });
-        throw subscriptionError;
+        if (createError) throw createError;
+        profileResult.data = newProfile;
+      } else if (profileResult.error) {
+        throw profileResult.error;
       }
 
-      // Verify plan types match
-      if (subscriptionData.plan_type !== userResult.data.plan_type) {
-        console.warn('Plan type mismatch between users and subscriptions tables:', {
-          userPlan: userResult.data.plan_type,
-          subscriptionPlan: subscriptionData.plan_type
-        });
+      // Set the profile with the correct plan type
+      const currentPlanType = userResult.data?.plan_type || subscriptionResult.data?.plan_type || 'free';
+      setProfile({
+        ...profileResult.data,
+        plan_type: currentPlanType
+      });
+
+      // Set subscription data if available
+      if (subscriptionResult.data) {
+        setSubscription(subscriptionResult.data);
       }
 
-      setSubscription(subscriptionData);
     } catch (err) {
       console.error('Error loading profile:', err);
       setError('Failed to load profile information');
@@ -187,54 +146,14 @@ function ProfileContent() {
     }
   };
 
-  // Load data on mount
+  // Load data on mount and after successful checkout
   useEffect(() => {
     loadProfileData();
-  }, [router]);
-
-  // Define the fetchProfile function
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Get the user's profile data
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-          
-        // Get subscription data
-        const { data: subscriptionData } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (profileData) {
-          setProfile({
-            ...profileData,
-            subscription: subscriptionData,
-            plan_type: subscriptionData?.plan_type || 'free'
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchProfile();
     
     if (checkoutStatus === 'success') {
       toast.success('Payment successful! Updating your subscription...');
-      // Add a small delay to allow webhook to process
-      setTimeout(fetchProfile, 2000);
+      // Add a delay to allow webhook to process
+      setTimeout(loadProfileData, 2000);
     }
   }, [checkoutStatus]);
 
@@ -251,7 +170,7 @@ function ProfileContent() {
         filter: `user_id=eq.${profile.id}`,
       }, () => {
         console.log('Subscription changed, refreshing profile');
-        fetchProfile();
+        loadProfileData();
       })
       .subscribe();
 
