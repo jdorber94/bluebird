@@ -9,9 +9,6 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const preferredRegion = 'iad1';
 
-// Disable body parsing using the new route segment config format
-export const bodyParser = false;
-
 // Initialize Stripe with the latest API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -23,27 +20,11 @@ const supabase = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Helper function to get raw body as text
-async function getRawBody(req: NextRequest): Promise<string> {
-  const chunks = [];
-  const reader = req.body?.getReader();
-  if (!reader) {
-    throw new Error('No request body found');
-  }
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-  }
-
-  return Buffer.concat(chunks).toString('utf8');
-}
-
+// Configure body parsing using the new Next.js 14 format
 export async function POST(req: NextRequest) {
   try {
     // Get raw body for signature verification
-    const rawBody = await getRawBody(req);
+    const rawBody = await req.text();
     console.log('Received webhook request with raw body length:', rawBody.length);
     
     // Get all headers for debugging
