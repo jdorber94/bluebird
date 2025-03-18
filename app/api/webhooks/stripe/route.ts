@@ -106,39 +106,63 @@ export async function POST(req: NextRequest) {
             const subscriptionId = session.subscription as string;
             console.log('Fetching subscription details from Stripe. ID:', subscriptionId);
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            console.log('Stripe subscription data:', {
-              id: subscription.id,
-              status: subscription.status,
-              customerId: subscription.customer,
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-              priceId: subscription.items.data[0].price.id,
-              expectedPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
-              planType,
-              allPriceIds: subscription.items.data.map(item => item.price.id)
+            
+            // Log all relevant data for debugging
+            console.log('Complete webhook data:', {
+              session: {
+                id: session.id,
+                metadata: session.metadata,
+                customer: session.customer,
+                subscription: session.subscription,
+                paymentStatus: session.payment_status,
+                status: session.status
+              },
+              subscription: {
+                id: subscription.id,
+                status: subscription.status,
+                customerId: subscription.customer,
+                priceId: subscription.items.data[0].price.id,
+                expectedPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+                planType,
+                allPriceIds: subscription.items.data.map(item => item.price.id)
+              },
+              env: {
+                stripeKey: process.env.STRIPE_SECRET_KEY?.substring(0, 8),
+                webhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.substring(0, 8),
+                priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+                supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+              }
             });
 
-            // Verify the price ID matches
-            const priceId = subscription.items.data[0].price.id;
-            if (priceId !== process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
-              console.warn('Price ID mismatch:', {
-                received: priceId,
-                expected: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
-              });
+            // Verify the subscription status is active
+            if (subscription.status !== 'active') {
+              console.error('Subscription is not active:', subscription.status);
+              return NextResponse.json(
+                { error: `Subscription status is ${subscription.status}` },
+                { status: 200 }
+              );
             }
 
             // First check if a subscription record exists
-            const { data: existingSubscription } = await supabase
+            const { data: existingSubscription, error: checkError } = await supabase
               .from('subscriptions')
               .select('*')
               .eq('user_id', userId)
               .single();
 
-            console.log('Existing subscription:', existingSubscription);
+            if (checkError) {
+              console.error('Error checking existing subscription:', checkError);
+            }
+
+            console.log('Existing subscription check:', {
+              exists: !!existingSubscription,
+              data: existingSubscription
+            });
 
             let subscriptionData;
             if (existingSubscription) {
               // Update existing subscription
-              console.log('Updating existing subscription');
+              console.log('Updating existing subscription for user:', userId);
               const { data, error: updateError } = await supabase
                 .from('subscriptions')
                 .update({
@@ -157,12 +181,19 @@ export async function POST(req: NextRequest) {
                 .single();
 
               if (updateError) {
+                console.error('Error updating subscription:', updateError);
                 throw new Error(`Error updating subscription: ${updateError.message}`);
               }
               subscriptionData = data;
+              console.log('Successfully updated subscription:', {
+                id: data.id,
+                userId: data.user_id,
+                planType: data.plan_type,
+                status: data.status
+              });
             } else {
               // Create new subscription
-              console.log('Creating new subscription');
+              console.log('Creating new subscription for user:', userId);
               const { data, error: insertError } = await supabase
                 .from('subscriptions')
                 .insert([{
@@ -182,15 +213,39 @@ export async function POST(req: NextRequest) {
                 .single();
 
               if (insertError) {
+                console.error('Error creating subscription:', insertError);
                 throw new Error(`Error creating subscription: ${insertError.message}`);
               }
               subscriptionData = data;
+              console.log('Successfully created subscription:', {
+                id: data.id,
+                userId: data.user_id,
+                planType: data.plan_type,
+                status: data.status
+              });
             }
             
-            console.log('Updated/Created subscription data:', subscriptionData);
+            // Verify subscription was updated/created correctly
+            const { data: verifySubscription, error: verifyError } = await supabase
+              .from('subscriptions')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+
+            if (verifyError) {
+              console.error('Error verifying subscription update:', verifyError);
+            } else {
+              console.log('Verification of subscription update:', {
+                id: verifySubscription.id,
+                userId: verifySubscription.user_id,
+                planType: verifySubscription.plan_type,
+                status: verifySubscription.status,
+                matches: verifySubscription.plan_type === planType
+              });
+            }
             
             // Then update the users table
-            console.log('Updating user plan type in Supabase');
+            console.log('Updating user plan type in Supabase for user:', userId);
             const { data: userData, error: userUpdateError } = await supabase
               .from('users')
               .update({ 
@@ -202,10 +257,27 @@ export async function POST(req: NextRequest) {
               .single();
 
             if (userUpdateError) {
+              console.error('Error updating user:', userUpdateError);
               throw new Error(`Error updating user plan: ${userUpdateError.message}`);
             }
             
-            console.log('Updated user data:', userData);
+            // Verify user was updated correctly
+            const { data: verifyUser, error: verifyUserError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (verifyUserError) {
+              console.error('Error verifying user update:', verifyUserError);
+            } else {
+              console.log('Verification of user update:', {
+                id: verifyUser.id,
+                planType: verifyUser.plan_type,
+                matches: verifyUser.plan_type === planType
+              });
+            }
+            
             console.log('Successfully processed checkout.session.completed event');
           } catch (error: any) {
             console.error('Error processing subscription update:', error);
