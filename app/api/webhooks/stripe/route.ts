@@ -9,12 +9,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const preferredRegion = 'iad1';
 
-// Disable body parsing, as we need the raw body for signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Disable body parsing using the new route segment config format
+export const bodyParser = false;
 
 // Initialize Stripe with the latest API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -238,10 +234,20 @@ export async function POST(req: NextRequest) {
             customerId: subscription.customer,
             currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
             cancelAtPeriodEnd: subscription.cancel_at_period_end,
-            priceId: subscription.items.data[0].price.id
+            priceId: subscription.items.data[0].price.id,
+            items: subscription.items.data
           });
           
           const customerId = subscription.customer as string;
+          const priceId = subscription.items.data[0].price.id;
+          
+          // Determine plan type from price ID
+          let planType = 'free';
+          if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
+            planType = 'pro';
+          }
+          
+          console.log('Determined plan type:', planType, 'from price ID:', priceId);
           
           // First find the existing subscription
           const { data: subscriptionData, error: findError } = await supabase
@@ -259,46 +265,42 @@ export async function POST(req: NextRequest) {
           }
 
           console.log('Found existing subscription:', subscriptionData);
-          const priceId = subscription.items.data[0].price.id;
-          const planType = subscriptionData.plan_type;
           
-          // Update subscription status
-          const { data: updatedSubscription, error: updateError } = await supabase
-            .from('subscriptions')
-            .update({
-              status: subscription.status,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              stripe_price_id: priceId,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', subscriptionData.user_id)
-            .select()
-            .single();
+          // Always update both subscription and user records with the current plan type
+          try {
+            // Update subscription status and plan type
+            const { data: updatedSubscription, error: updateError } = await supabase
+              .from('subscriptions')
+              .update({
+                status: subscription.status,
+                plan_type: planType,
+                current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                cancel_at_period_end: subscription.cancel_at_period_end,
+                stripe_price_id: priceId,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', subscriptionData.user_id)
+              .select()
+              .single();
 
-          if (updateError) {
-            console.error('Error updating subscription:', updateError);
-            return NextResponse.json(
-              { error: `Error updating subscription: ${updateError.message}` },
-              { status: 200 }
-            );
-          }
-          
-          console.log('Updated subscription:', {
-            id: updatedSubscription.id,
-            userId: updatedSubscription.user_id,
-            status: updatedSubscription.status,
-            planType: updatedSubscription.plan_type
-          });
-          
-          // Update user's plan type if subscription is cancelled
-          if (subscription.status === 'canceled') {
-            console.log('Subscription canceled, updating user to free plan');
+            if (updateError) {
+              throw new Error(`Error updating subscription: ${updateError.message}`);
+            }
+            
+            console.log('Updated subscription:', {
+              id: updatedSubscription.id,
+              userId: updatedSubscription.user_id,
+              status: updatedSubscription.status,
+              planType: updatedSubscription.plan_type,
+              priceId: updatedSubscription.stripe_price_id
+            });
+            
+            // Always update user's plan type to match subscription
             const { data: userData, error: userUpdateError } = await supabase
               .from('users')
               .update({ 
-                plan_type: 'free',
+                plan_type: planType,
                 updated_at: new Date().toISOString()
               })
               .eq('id', subscriptionData.user_id)
@@ -306,11 +308,7 @@ export async function POST(req: NextRequest) {
               .single();
               
             if (userUpdateError) {
-              console.error('Error updating user:', userUpdateError);
-              return NextResponse.json(
-                { error: `Error updating user plan: ${userUpdateError.message}` },
-                { status: 200 }
-              );
+              throw new Error(`Error updating user plan: ${userUpdateError.message}`);
             }
             
             console.log('Updated user data:', {
@@ -318,6 +316,12 @@ export async function POST(req: NextRequest) {
               planType: userData.plan_type,
               updatedAt: userData.updated_at
             });
+          } catch (error: any) {
+            console.error('Error processing subscription update:', error);
+            return NextResponse.json(
+              { error: error.message },
+              { status: 200 }
+            );
           }
           break;
         }
