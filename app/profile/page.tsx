@@ -152,15 +152,51 @@ function ProfileContent() {
     
     if (checkoutStatus === 'success') {
       toast.success('Payment successful! Updating your subscription...');
-      // Add a delay to allow webhook to process
-      setTimeout(loadProfileData, 2000);
+      
+      // Poll for subscription updates
+      let attempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = setInterval(async () => {
+        console.log('Polling for subscription update, attempt:', attempts + 1);
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (subscription?.status === 'active' && subscription?.plan_type === 'pro') {
+          console.log('Subscription active and updated to pro!');
+          clearInterval(pollInterval);
+          loadProfileData();
+        } else {
+          console.log('Subscription not yet updated:', subscription);
+          attempts++;
+          if (attempts >= maxAttempts) {
+            console.log('Max polling attempts reached');
+            clearInterval(pollInterval);
+            toast.error('Please refresh the page if subscription status is not updated');
+          }
+        }
+      }, 2000); // Poll every 2 seconds
+
+      // Cleanup interval
+      return () => clearInterval(pollInterval);
     }
   }, [checkoutStatus]);
 
-  // Real-time subscription updates
+  // Real-time subscription updates with better error handling
   useEffect(() => {
     if (!profile?.id) return;
 
+    console.log('Setting up real-time subscription updates for user:', profile.id);
+    
     const channel = supabase
       .channel('profile-changes')
       .on('postgres_changes', {
@@ -168,13 +204,16 @@ function ProfileContent() {
         schema: 'public',
         table: 'subscriptions',
         filter: `user_id=eq.${profile.id}`,
-      }, () => {
-        console.log('Subscription changed, refreshing profile');
+      }, (payload) => {
+        console.log('Subscription change detected:', payload);
         loadProfileData();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription channel status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up subscription channel');
       channel.unsubscribe();
     };
   }, [profile?.id]);
@@ -343,7 +382,8 @@ function ProfileContent() {
           <div className="text-center">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
+              <div className="text-sm text-gray-500 mt-4">Loading subscription data...</div>
             </div>
           </div>
         </div>
