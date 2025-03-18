@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
     const signature = headers().get('stripe-signature');
     if (!signature) {
       console.error('No Stripe signature found in webhook request');
+      // Return 200 even for signature errors to prevent retries
       return NextResponse.json(
         { error: 'Missing stripe-signature header' },
-        { status: 400 }
+        { status: 200 }
       );
     }
     console.log('Stripe signature found:', signature.substring(0, 20) + '...');
@@ -51,9 +52,10 @@ export async function POST(req: NextRequest) {
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);
       console.error('Full error:', err);
+      // Return 200 for signature verification failures
       return NextResponse.json(
         { error: 'Webhook signature verification failed' },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -248,10 +250,11 @@ export async function POST(req: NextRequest) {
           console.log(`Unhandled event type: ${event.type}`);
       }
 
+      // Always return 200 for successful processing
       return NextResponse.json({ received: true }, { status: 200 });
     } catch (error: any) {
       console.error('Error processing webhook event:', error.message);
-      // Return 200 to acknowledge receipt even if processing failed
+      // Return 200 even for processing errors to prevent retries
       return NextResponse.json(
         { received: true, warning: `Error processing webhook: ${error.message}` },
         { status: 200 }
@@ -259,9 +262,10 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     console.error('Webhook Error:', error.message);
+    // Return 200 for any other errors
     return NextResponse.json(
       { error: error.message },
-      { status: 400 }
+      { status: 200 }
     );
   }
 } 
