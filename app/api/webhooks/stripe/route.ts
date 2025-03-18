@@ -111,8 +111,20 @@ export async function POST(req: NextRequest) {
               status: subscription.status,
               customerId: subscription.customer,
               currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-              priceId: subscription.items.data[0].price.id
+              priceId: subscription.items.data[0].price.id,
+              expectedPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+              planType,
+              allPriceIds: subscription.items.data.map(item => item.price.id)
             });
+
+            // Verify the price ID matches
+            const priceId = subscription.items.data[0].price.id;
+            if (priceId !== process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
+              console.warn('Price ID mismatch:', {
+                received: priceId,
+                expected: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
+              });
+            }
 
             // First check if a subscription record exists
             const { data: existingSubscription } = await supabase
