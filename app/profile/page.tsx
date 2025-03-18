@@ -48,6 +48,8 @@ export default function ProfilePage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkoutStatus = searchParams.get('checkout');
 
   // Function to load profile and subscription data
   const loadProfileData = async () => {
@@ -172,6 +174,56 @@ export default function ProfilePage() {
   useEffect(() => {
     loadProfileData();
   }, [router]);
+
+  // We should add a useEffect to fetch the latest profile data after checkout
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*, subscriptions(*)')
+            .eq('id', session.user.id)
+            .single();
+          
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+    
+    if (checkoutStatus === 'success') {
+      toast.success('Payment successful! Updating your subscription...');
+      // Add a small delay to allow webhook to process
+      setTimeout(fetchProfile, 2000);
+    }
+  }, [checkoutStatus]);
+
+  useEffect(() => {
+    const { data: subscription } = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${profile?.id}`,
+      }, () => {
+        // Refetch profile when changes occur
+        fetchProfile();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [profile?.id]);
 
   const handleUpgrade = async () => {
     try {
@@ -314,6 +366,19 @@ export default function ProfilePage() {
             >
               Try Again
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Subscription Updated!</h2>
+            <p className="text-base text-gray-500">Current Plan: {profile?.plan_type}</p>
           </div>
         </div>
       </div>

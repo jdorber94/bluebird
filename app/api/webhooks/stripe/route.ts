@@ -63,8 +63,13 @@ export async function POST(req: NextRequest) {
         case 'checkout.session.completed': {
           console.log('Processing checkout.session.completed event');
           const session = event.data.object as Stripe.Checkout.Session;
-          console.log('Full session data:', JSON.stringify(session, null, 2));
-          console.log('Session metadata:', session.metadata);
+          
+          // Add more logging
+          console.log('Session data:', {
+            metadata: session.metadata,
+            customer: session.customer,
+            subscription: session.subscription
+          });
           
           if (!session.metadata?.userId || !session.metadata?.planType) {
             throw new Error('Missing required metadata: userId or planType');
