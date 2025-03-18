@@ -101,7 +101,7 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          plan_type: 'free' | 'premium'
+          plan_type: 'free' | 'pro'
           status: 'active' | 'cancelled' | 'expired'
           current_period_start: string
           current_period_end: string
@@ -112,7 +112,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
-          plan_type: 'free' | 'premium'
+          plan_type: 'free' | 'pro'
           status: 'active' | 'cancelled' | 'expired'
           current_period_start: string
           current_period_end: string
@@ -123,7 +123,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
-          plan_type?: 'free' | 'premium'
+          plan_type?: 'free' | 'pro'
           status?: 'active' | 'cancelled' | 'expired'
           current_period_start?: string
           current_period_end?: string
@@ -149,7 +149,7 @@ export type Demo = Database['public']['Tables']['demos']['Row'];
 
 export interface SubscriptionInfo {
   isFreeUser: boolean;
-  plan: 'free' | 'premium';
+  plan: 'free' | 'pro';
   totalCount: number;
 }
 

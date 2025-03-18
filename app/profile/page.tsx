@@ -11,7 +11,8 @@ interface Profile {
   email: string;
   full_name: string;
   role: string;
-  plan_type: 'free' | 'pro' | 'enterprise';
+  plan_type: 'free' | 'pro';
+  subscription?: any;
 }
 
 interface Subscription {
@@ -175,28 +176,43 @@ export default function ProfilePage() {
     loadProfileData();
   }, [router]);
 
-  // We should add a useEffect to fetch the latest profile data after checkout
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*, subscriptions(*)')
-            .eq('id', session.user.id)
-            .single();
+  // Define the fetchProfile function
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Get the user's profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
           
-          setProfile(data);
+        // Get subscription data
+        const { data: subscriptionData } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile({
+            ...profileData,
+            subscription: subscriptionData,
+            plan_type: subscriptionData?.plan_type || 'free'
+          });
         }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Initial fetch on component mount
+  useEffect(() => {
     fetchProfile();
     
     if (checkoutStatus === 'success') {
@@ -206,22 +222,25 @@ export default function ProfilePage() {
     }
   }, [checkoutStatus]);
 
+  // Real-time subscription updates
   useEffect(() => {
-    const { data: subscription } = supabase
+    if (!profile?.id) return;
+
+    const channel = supabase
       .channel('profile-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'profiles',
-        filter: `id=eq.${profile?.id}`,
+        table: 'subscriptions',
+        filter: `user_id=eq.${profile.id}`,
       }, () => {
-        // Refetch profile when changes occur
+        console.log('Subscription changed, refreshing profile');
         fetchProfile();
       })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [profile?.id]);
 
@@ -337,6 +356,49 @@ export default function ProfilePage() {
       month: 'long',
       day: 'numeric'
     }).replace(/\d+/, day + getOrdinalSuffix(day));
+  };
+
+  // Handle checkout for upgrading to Pro
+  const handleCheckout = async () => {
+    try {
+      setCheckoutLoading(true);
+      
+      // Use existing price ID
+      const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || 'price_1QxtafEUo5Em020GgQptqQsJ';
+      
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          planType: 'pro',
+        }),
+        credentials: 'include', // Important: include credentials
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      const { url } = await response.json();
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast.error('Failed to create checkout session');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  // Handle plan change (downgrade)
+  const handlePlanChange = (planType: 'free' | 'pro') => {
+    // For downgrading, we'll just show a modal or redirect to support
+    // This is just a placeholder
+    toast.success('Please contact support to downgrade your plan.');
   };
 
   if (loading) {
@@ -471,7 +533,7 @@ export default function ProfilePage() {
               <h4 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Free Plan */}
-                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'free' ? 'ring-2 ring-blue-500' : ''}`}>
+                <div className={`border rounded-lg p-6 ${profile?.plan_type === 'free' ? 'ring-2 ring-blue-500' : ''}`}>
                   <h5 className="text-lg font-medium text-gray-900">Free</h5>
                   <p className="mt-2 text-sm text-gray-500">Perfect for getting started</p>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$0</p>
@@ -489,11 +551,28 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Basic analytics</span>
                     </li>
                   </ul>
+                  <div className="mt-6">
+                    {profile?.plan_type === 'free' ? (
+                      <span className="block w-full text-center py-2 text-sm text-gray-500">
+                        Current Plan
+                      </span>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-2">Need to downgrade?</p>
+                        <button 
+                          className="text-xs text-gray-600 hover:text-gray-900"
+                          onClick={() => handlePlanChange('free')}
+                        >
+                          Contact Support
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Premium Plan */}
-                <div className={`border rounded-lg p-6 ${subscription?.plan_type === 'premium' ? 'ring-2 ring-blue-500' : ''}`}>
-                  <h5 className="text-lg font-medium text-gray-900">Premium</h5>
+                {/* Pro Plan */}
+                <div className={`border rounded-lg p-6 ${profile?.plan_type === 'pro' ? 'ring-2 ring-blue-500' : ''}`}>
+                  <h5 className="text-lg font-medium text-gray-900">Pro</h5>
                   <p className="mt-2 text-sm text-gray-500">For growing teams</p>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$29</p>
                   <ul className="mt-6 space-y-4">
@@ -516,19 +595,18 @@ export default function ProfilePage() {
                       <span className="ml-3 text-sm text-gray-500">Priority support</span>
                     </li>
                   </ul>
-                  
                   <div className="mt-6">
-                    {subscription?.plan_type === 'premium' ? (
+                    {profile?.plan_type === 'pro' ? (
                       <span className="block w-full text-center py-2 text-sm text-gray-500">
                         Current Plan
                       </span>
                     ) : (
                       <button
-                        onClick={handleUpgrade}
+                        onClick={handleCheckout}
                         disabled={checkoutLoading}
-                        className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="block w-full py-2 text-sm text-center text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {checkoutLoading ? 'Processing...' : 'Upgrade Now'}
+                        {checkoutLoading ? 'Processing...' : 'Upgrade'}
                       </button>
                     )}
                   </div>

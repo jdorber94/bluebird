@@ -93,7 +93,7 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
 
     // Determine if user is on free plan - default to free if any issues
     const isFreeUser = !subscriptionData || subscriptionData.plan_type === 'free';
-    console.log('Is free user:', isFreeUser);
+    console.log('Is free user:', isFreeUser, 'Plan type:', subscriptionData?.plan_type);
 
     // Get demos with appropriate limit
     const query = supabase
@@ -106,6 +106,8 @@ export const getDemos = async (): Promise<GetDemosResponse> => {
     if (isFreeUser) {
       console.log('Applying 10 demo limit for free user');
       query.limit(10);
+    } else {
+      console.log('No limit applied for premium user with plan:', subscriptionData?.plan_type);
     }
 
     const { data, error } = await query;
