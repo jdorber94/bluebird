@@ -165,23 +165,44 @@ function ProfileContent() {
           return;
         }
 
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
+        // Get both subscription and user data
+        const [{ data: subscription }, { data: user }] = await Promise.all([
+          supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single(),
+          supabase
+            .from('users')
+            .select('plan_type')
+            .eq('id', session.user.id)
+            .single()
+        ]);
 
-        if (subscription?.status === 'active' && subscription?.plan_type === 'pro') {
-          console.log('Subscription active and updated to pro!');
+        console.log('Poll update - Subscription:', subscription);
+        console.log('Poll update - User:', user);
+
+        // Check both subscription and user data
+        if (
+          (subscription?.status === 'active' && subscription?.plan_type === 'pro') ||
+          user?.plan_type === 'pro'
+        ) {
+          console.log('Pro subscription confirmed!');
           clearInterval(pollInterval);
           loadProfileData();
+          toast.success('Subscription activated successfully!');
         } else {
-          console.log('Subscription not yet updated:', subscription);
+          console.log('Subscription/user not yet updated:', {
+            subscription: subscription || 'No subscription found',
+            userPlan: user?.plan_type || 'No user plan found'
+          });
           attempts++;
           if (attempts >= maxAttempts) {
             console.log('Max polling attempts reached');
             clearInterval(pollInterval);
-            toast.error('Please refresh the page if subscription status is not updated');
+            toast.error(
+              'Subscription status is taking longer than expected to update. Please refresh the page in a few moments.'
+            );
           }
         }
       }, 2000); // Poll every 2 seconds
