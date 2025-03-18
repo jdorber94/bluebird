@@ -449,7 +449,9 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <CheckoutStatus onCheckoutComplete={loadProfileData} />
+      <Suspense fallback={null}>
+        <CheckoutStatus onCheckoutComplete={loadProfileData} />
+      </Suspense>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Section */}
