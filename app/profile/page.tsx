@@ -70,45 +70,50 @@ function ProfileContent() {
 
   // Function to load profile and subscription data
   const loadProfileData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      console.log('Loading profile data...');
-      setLoading(true);
+      console.log('Fetching latest profile data...');
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session found, redirecting to login');
-        router.push('/login');
-        return;
-      }
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error('No session found');
 
-      // Get all necessary data in parallel
-      const [profileResult, userResult, subscriptionResult] = await Promise.all([
+      // Fetch all data in parallel
+      const [userResult, subscriptionResult, profileResult] = await Promise.all([
+        // Get user data
         supabase
-          .from('profiles')
+          .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single(),
-        supabase
-          .from('users')
-          .select('plan_type')
-          .eq('id', session.user.id)
-          .single(),
+        
+        // Get subscription data
         supabase
           .from('subscriptions')
           .select('*')
           .eq('user_id', session.user.id)
+          .single(),
+        
+        // Get profile data
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
           .single()
       ]);
 
-      console.log('Data fetch results:', {
-        profile: profileResult,
-        user: userResult,
-        subscription: subscriptionResult
+      console.log('Fetched data:', {
+        user: userResult.data,
+        subscription: subscriptionResult.data,
+        profile: profileResult.data
       });
 
       // Handle profile data
       if (profileResult.error && profileResult.error.code === 'PGRST116') {
-        // Profile doesn't exist, create it
+        console.log('Profile not found, creating new profile...');
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert([{
@@ -126,8 +131,12 @@ function ProfileContent() {
         throw profileResult.error;
       }
 
-      // Set the profile with the correct plan type
+      // Determine current plan type from both user and subscription data
       const currentPlanType = userResult.data?.plan_type || subscriptionResult.data?.plan_type || 'free';
+      
+      console.log('Setting profile with plan type:', currentPlanType);
+      
+      // Set the profile with the correct plan type
       setProfile({
         ...profileResult.data,
         plan_type: currentPlanType
@@ -136,6 +145,7 @@ function ProfileContent() {
       // Set subscription data if available
       if (subscriptionResult.data) {
         setSubscription(subscriptionResult.data);
+        console.log('Updated subscription data:', subscriptionResult.data);
       }
 
     } catch (err) {
@@ -146,98 +156,50 @@ function ProfileContent() {
     }
   };
 
-  // Load data on mount and after successful checkout
+  // Add polling after successful checkout
   useEffect(() => {
-    loadProfileData();
-    
-    if (checkoutStatus === 'success') {
-      toast.success('Payment successful! Updating your subscription...');
-      
-      // Poll for subscription updates
-      let attempts = 0;
-      const maxAttempts = 10;
-      const pollInterval = setInterval(async () => {
-        console.log('Polling for subscription update, attempt:', attempts + 1);
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          clearInterval(pollInterval);
-          return;
-        }
+    let pollCount = 0;
+    let pollInterval: NodeJS.Timeout;
 
-        // Get both subscription and user data
-        const [{ data: subscription }, { data: user }] = await Promise.all([
-          supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single(),
-          supabase
-            .from('users')
-            .select('plan_type')
-            .eq('id', session.user.id)
-            .single()
-        ]);
+    const pollForUpdates = async () => {
+      if (pollCount >= 10) {
+        console.log('Reached maximum poll attempts');
+        clearInterval(pollInterval);
+        return;
+      }
 
-        console.log('Poll update - Subscription:', subscription);
-        console.log('Poll update - User:', user);
+      console.log(`Polling for updates (attempt ${pollCount + 1}/10)...`);
+      await loadProfileData();
+      pollCount++;
 
-        // Check both subscription and user data
-        if (
-          (subscription?.status === 'active' && subscription?.plan_type === 'pro') ||
-          user?.plan_type === 'pro'
-        ) {
-          console.log('Pro subscription confirmed!');
-          clearInterval(pollInterval);
-          loadProfileData();
-          toast.success('Subscription activated successfully!');
-        } else {
-          console.log('Subscription/user not yet updated:', {
-            subscription: subscription || 'No subscription found',
-            userPlan: user?.plan_type || 'No user plan found'
-          });
-          attempts++;
-          if (attempts >= maxAttempts) {
-            console.log('Max polling attempts reached');
-            clearInterval(pollInterval);
-            toast.error(
-              'Subscription status is taking longer than expected to update. Please refresh the page in a few moments.'
-            );
-          }
-        }
-      }, 2000); // Poll every 2 seconds
+      // Check if we've received pro status
+      const hasProStatus = profile?.plan_type === 'pro' || subscription?.plan_type === 'pro';
+      if (hasProStatus) {
+        console.log('Pro status confirmed, stopping polling');
+        clearInterval(pollInterval);
+        toast.success('Your subscription has been activated!');
+      }
+    };
 
-      // Cleanup interval
+    // Start polling if we're in a post-checkout state
+    if (searchParams?.get('checkout') === 'success') {
+      console.log('Starting post-checkout polling...');
+      pollInterval = setInterval(pollForUpdates, 2000);
       return () => clearInterval(pollInterval);
     }
-  }, [checkoutStatus]);
+  }, [searchParams]);
 
-  // Real-time subscription updates with better error handling
+  // Add manual refresh capability
+  const handleRefresh = async () => {
+    console.log('Manually refreshing profile data...');
+    await loadProfileData();
+    toast.success('Profile data refreshed');
+  };
+
+  // Initial load
   useEffect(() => {
-    if (!profile?.id) return;
-
-    console.log('Setting up real-time subscription updates for user:', profile.id);
-    
-    const channel = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'subscriptions',
-        filter: `user_id=eq.${profile.id}`,
-      }, (payload) => {
-        console.log('Subscription change detected:', payload);
-        loadProfileData();
-      })
-      .subscribe((status) => {
-        console.log('Subscription channel status:', status);
-      });
-
-    return () => {
-      console.log('Cleaning up subscription channel');
-      channel.unsubscribe();
-    };
-  }, [profile?.id]);
+    loadProfileData();
+  }, []);
 
   const handleUpgrade = async () => {
     try {
@@ -448,6 +410,15 @@ function ProfileContent() {
       <CheckoutStatus onCheckoutComplete={loadProfileData} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Profile</h1>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md"
+          >
+            Refresh
+          </button>
+        </div>
         {/* Profile Section */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-4 py-5 sm:p-6">
