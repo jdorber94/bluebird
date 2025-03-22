@@ -1,111 +1,77 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { Fragment, useState } from 'react';
+import { Menu, Transition } from '@headlessui/react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import Modal from './Modal';
+import ProfileContent from './ProfileContent';
 
-interface ProfileMenuProps {
-  isCollapsed?: boolean;
-}
-
-interface Profile {
-  full_name: string;
-  role: string;
-}
-
-export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const menuRef = useRef<HTMLDivElement>(null);
+export default function ProfileMenu() {
   const router = useRouter();
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name, role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) throw error;
-        setProfile(data);
-      } catch (err) {
-        console.error('Error loading profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-      return;
-    }
+    await supabase.auth.signOut();
     router.push('/login');
   };
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-2 hover:bg-gray-100 rounded-md w-full`}
-      >
-        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
-          {profile?.full_name?.charAt(0) || '?'}
+    <>
+      <Menu as="div" className="relative inline-block text-left">
+        <div>
+          <Menu.Button className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none">
+            <span className="text-sm font-medium text-gray-600">J</span>
+          </Menu.Button>
         </div>
-        {!isCollapsed && (
-          <div className="text-left">
-            <div className="text-sm font-medium">
-              {loading ? 'Loading...' : profile?.full_name || 'Set up your profile'}
-            </div>
-            <div className="text-xs text-gray-500">{profile?.role || 'Demo Manager'}</div>
-          </div>
-        )}
-      </button>
 
-      {isOpen && (
-        <div className={`absolute ${isCollapsed ? 'left-full ml-2' : 'bottom-full mb-2 left-0'} w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50`}>
-          <div className="py-1">
-            <a
-              href="/profile"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <svg className="mr-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              View Profile
-            </a>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              <svg className="mr-3 h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-100"
+          enterFrom="transform opacity-0 scale-95"
+          enterTo="transform opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="transform opacity-100 scale-100"
+          leaveTo="transform opacity-0 scale-95"
+        >
+          <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <div className="px-1 py-1">
+              <Menu.Item>
+                {({ active }: { active: boolean }) => (
+                  <button
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className={`${
+                      active ? 'bg-gray-100' : ''
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                  >
+                    View Profile
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }: { active: boolean }) => (
+                  <button
+                    onClick={handleSignOut}
+                    className={`${
+                      active ? 'bg-gray-100' : ''
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                  >
+                    Sign Out
+                  </button>
+                )}
+              </Menu.Item>
+            </div>
+          </Menu.Items>
+        </Transition>
+      </Menu>
+
+      <Modal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        title="Profile"
+      >
+        <ProfileContent isModal={true} onClose={() => setIsProfileModalOpen(false)} />
+      </Modal>
+    </>
   );
 } 
