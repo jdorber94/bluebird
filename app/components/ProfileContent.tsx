@@ -15,7 +15,6 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
-  role: string;
   plan_type: 'free' | 'pro';
   subscription?: any;
 }
@@ -399,10 +398,6 @@ export default function ProfileContent({ isModal, onClose }: ProfileContentProps
               <div>
                 <label className="block text-sm font-medium text-gray-700">Email</label>
                 <div className="mt-1 text-sm text-gray-900">{profile?.email}</div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <div className="mt-1 text-sm text-gray-900">{profile?.role}</div>
               </div>
             </div>
           </div>
