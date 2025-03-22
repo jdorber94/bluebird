@@ -260,6 +260,16 @@ export default function ProfileContent({ isModal, onClose }: ProfileContentProps
     }).replace(/\d+/, day + getOrdinalSuffix(day));
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Error signing out:', err);
+      toast.error('Failed to sign out');
+    }
+  };
+
   // Initial load
   useEffect(() => {
     loadProfileData();
@@ -337,7 +347,15 @@ export default function ProfileContent({ isModal, onClose }: ProfileContentProps
         {/* Profile Section */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Profile Information</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">Profile Information</h3>
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Sign Out
+              </button>
+            </div>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
