@@ -45,6 +45,7 @@
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
+    "react-error-boundary": "^5.0.0",
     "react-hot-toast": "^2.5.2",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.0.2",

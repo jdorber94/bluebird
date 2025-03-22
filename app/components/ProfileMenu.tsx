@@ -58,7 +58,7 @@ export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   };
 
   const handleProfileClick = () => {
-    router.push('/profile');
+    window.location.href = '/profile';
   };
 
   return (

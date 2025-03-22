@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { ErrorBoundary } from 'react-error-boundary';
 import ProfileContent from '../components/ProfileContent';
 
 // Loading component
@@ -19,11 +21,34 @@ function LoadingProfile() {
   );
 }
 
+// Error component
+function ErrorProfile() {
+  const router = useRouter();
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h2 className="text-lg font-medium text-red-600">Error loading profile</h2>
+          <p className="mt-1 text-sm text-gray-500">Please try again later</p>
+          <button
+            onClick={() => router.refresh()}
+            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Main profile component
 export default function ProfilePage() {
   return (
     <Suspense fallback={<LoadingProfile />}>
-      <ProfileContent />
+      <ErrorBoundary fallback={<ErrorProfile />}>
+        <ProfileContent />
+      </ErrorBoundary>
     </Suspense>
   );
 } 
