@@ -529,9 +529,19 @@ function ProfileContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Free Plan */}
                 <div className={`border rounded-lg p-6 ${profile?.plan_type === 'free' ? 'ring-2 ring-blue-500' : ''}`}>
-                  <h5 className="text-lg font-medium text-gray-900">Free</h5>
-                  <p className="mt-2 text-sm text-gray-500">Perfect for getting started</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="text-lg font-medium text-gray-900">Free</h5>
+                      <p className="mt-2 text-sm text-gray-500">Perfect for getting started</p>
+                    </div>
+                    {profile?.plan_type === 'free' && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Current
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-4 text-3xl font-bold text-gray-900">$0</p>
+                  <p className="mt-1 text-sm text-gray-500">forever</p>
                   <ul className="mt-6 space-y-4">
                     <li className="flex items-start">
                       <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,13 +559,13 @@ function ProfileContent() {
                   <div className="mt-6">
                     {profile?.plan_type === 'free' ? (
                       <span className="block w-full text-center py-2 text-sm text-gray-500">
-                        Current Plan
+                        Your Current Plan
                       </span>
                     ) : (
                       <div className="text-center">
                         <p className="text-sm text-gray-500 mb-2">Need to downgrade?</p>
                         <button 
-                          className="text-xs text-gray-600 hover:text-gray-900"
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                           onClick={() => handlePlanChange('free')}
                         >
                           Contact Support
@@ -567,9 +577,19 @@ function ProfileContent() {
 
                 {/* Pro Plan */}
                 <div className={`border rounded-lg p-6 ${profile?.plan_type === 'pro' ? 'ring-2 ring-blue-500' : ''}`}>
-                  <h5 className="text-lg font-medium text-gray-900">Pro</h5>
-                  <p className="mt-2 text-sm text-gray-500">For growing teams</p>
-                  <p className="mt-4 text-3xl font-bold text-gray-900">$29</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="text-lg font-medium text-gray-900">Pro</h5>
+                      <p className="mt-2 text-sm text-gray-500">For growing teams</p>
+                    </div>
+                    {profile?.plan_type === 'pro' && subscription?.status === 'active' && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-4 text-3xl font-bold text-gray-900">$4.99</p>
+                  <p className="mt-1 text-sm text-gray-500">per month</p>
                   <ul className="mt-6 space-y-4">
                     <li className="flex items-start">
                       <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -593,7 +613,7 @@ function ProfileContent() {
                   <div className="mt-6">
                     {profile?.plan_type === 'pro' ? (
                       <span className="block w-full text-center py-2 text-sm text-gray-500">
-                        Current Plan
+                        Your Current Plan
                       </span>
                     ) : (
                       <button
@@ -601,7 +621,7 @@ function ProfileContent() {
                         disabled={checkoutLoading}
                         className="block w-full py-2 text-sm text-center text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {checkoutLoading ? 'Processing...' : 'Upgrade'}
+                        {checkoutLoading ? 'Processing...' : 'Upgrade to Pro'}
                       </button>
                     )}
                   </div>
