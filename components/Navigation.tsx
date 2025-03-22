@@ -44,20 +44,15 @@ const Navigation = () => {
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             <div className="ml-3 relative">
-              <div>
-                <button
-                  type="button"
-                  className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-xs font-medium leading-none text-gray-800">JD</span>
-                  </div>
-                </button>
-              </div>
+              <Link
+                href="/profile"
+                className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <span className="sr-only">Open user menu</span>
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-xs font-medium leading-none text-gray-800">JD</span>
+                </div>
+              </Link>
             </div>
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
