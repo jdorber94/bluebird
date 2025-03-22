@@ -306,14 +306,21 @@ export async function POST(req: NextRequest) {
           const customerId = subscription.customer as string;
           const priceId = subscription.items.data[0].price.id;
           
+          console.log('Determining plan type from price ID:', {
+            receivedPriceId: priceId,
+            expectedProPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+            allPriceIds: subscription.items.data.map(item => item.price.id)
+          });
+
           // Determine plan type from price ID
           let planType = 'free';
           if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
             planType = 'pro';
+            console.log('Setting plan type to pro - price ID matched');
+          } else {
+            console.warn('Price ID did not match expected pro price ID - keeping plan as free');
           }
-          
-          console.log('Determined plan type:', planType, 'from price ID:', priceId);
-          
+
           // First find the existing subscription
           const { data: subscriptionData, error: findError } = await supabase
             .from('subscriptions')
@@ -334,32 +341,85 @@ export async function POST(req: NextRequest) {
           // Always update both subscription and user records with the current plan type
           try {
             // Update subscription status and plan type
-            const { data: updatedSubscription, error: updateError } = await supabase
+            const subscriptionUpdate = {
+              plan_type: planType,
+              status: subscription.status,
+              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              stripe_customer_id: subscription.customer as string,
+              stripe_subscription_id: subscription.id,
+              stripe_price_id: priceId,
+              updated_at: new Date().toISOString()
+            };
+
+            console.log('Preparing subscription update:', subscriptionUpdate);
+
+            // First check if a subscription record exists
+            const { data: existingSubscription, error: checkError } = await supabase
               .from('subscriptions')
-              .update({
-                status: subscription.status,
-                plan_type: planType,
-                current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-                cancel_at_period_end: subscription.cancel_at_period_end,
-                stripe_price_id: priceId,
-                updated_at: new Date().toISOString()
-              })
+              .select('*')
               .eq('user_id', subscriptionData.user_id)
-              .select()
               .single();
 
-            if (updateError) {
-              throw new Error(`Error updating subscription: ${updateError.message}`);
+            if (checkError) {
+              console.error('Error checking existing subscription:', checkError);
             }
-            
-            console.log('Updated subscription:', {
-              id: updatedSubscription.id,
-              userId: updatedSubscription.user_id,
-              status: updatedSubscription.status,
-              planType: updatedSubscription.plan_type,
-              priceId: updatedSubscription.stripe_price_id
+
+            console.log('Existing subscription check:', {
+              exists: !!existingSubscription,
+              currentPlanType: existingSubscription?.plan_type,
+              newPlanType: planType
             });
+
+            let subscriptionResult;
+            if (existingSubscription) {
+              // Update existing subscription
+              console.log('Updating existing subscription for user:', subscriptionData.user_id);
+              const { data, error: updateError } = await supabase
+                .from('subscriptions')
+                .update(subscriptionUpdate)
+                .eq('user_id', subscriptionData.user_id)
+                .select()
+                .single();
+
+              if (updateError) {
+                throw new Error(`Error updating subscription: ${updateError.message}`);
+              }
+              subscriptionResult = data;
+              console.log('Successfully updated subscription:', {
+                id: data.id,
+                userId: data.user_id,
+                planType: data.plan_type,
+                status: data.status,
+                priceId: data.stripe_price_id
+              });
+            } else {
+              // Create new subscription
+              console.log('Creating new subscription for user:', subscriptionData.user_id);
+              const { data, error: insertError } = await supabase
+                .from('subscriptions')
+                .insert([{
+                  user_id: subscriptionData.user_id,
+                  ...subscriptionUpdate,
+                  created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+
+              if (insertError) {
+                console.error('Error creating subscription:', insertError);
+                throw new Error(`Error creating subscription: ${insertError.message}`);
+              }
+              subscriptionResult = data;
+              console.log('Successfully created subscription:', {
+                id: data.id,
+                userId: data.user_id,
+                planType: data.plan_type,
+                status: data.status,
+                priceId: data.stripe_price_id
+              });
+            }
             
             // Always update user's plan type to match subscription
             const { data: userData, error: userUpdateError } = await supabase
