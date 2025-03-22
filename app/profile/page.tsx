@@ -582,9 +582,9 @@ function ProfileContent() {
                       <h5 className="text-lg font-medium text-gray-900">Pro</h5>
                       <p className="mt-2 text-sm text-gray-500">For growing teams</p>
                     </div>
-                    {profile?.plan_type === 'pro' && subscription?.status === 'active' && (
+                    {profile?.plan_type === 'pro' && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
+                        Current
                       </span>
                     )}
                   </div>
