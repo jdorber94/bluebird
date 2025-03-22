@@ -8,10 +8,41 @@ interface ProfileMenuProps {
   isCollapsed?: boolean;
 }
 
+interface Profile {
+  full_name: string;
+  role: string;
+}
+
 export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) throw error;
+        setProfile(data);
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,11 +69,15 @@ export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-2 hover:bg-gray-100 rounded-md w-full`}
       >
-        <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
+          {profile?.full_name?.charAt(0) || '?'}
+        </div>
         {!isCollapsed && (
           <div className="text-left">
-            <div className="text-sm font-medium">Yusuf Hilmi</div>
-            <div className="text-xs text-gray-500">Demo Manager</div>
+            <div className="text-sm font-medium">
+              {loading ? 'Loading...' : profile?.full_name || 'Set up your profile'}
+            </div>
+            <div className="text-xs text-gray-500">{profile?.role || 'Demo Manager'}</div>
           </div>
         )}
       </button>

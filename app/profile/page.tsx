@@ -64,6 +64,9 @@ function ProfileContent() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const checkoutStatus = searchParams.get('checkout');
@@ -386,6 +389,34 @@ function ProfileContent() {
     toast.success('Please contact support to downgrade your plan.');
   };
 
+  const handleEditName = () => {
+    setNewName(profile?.full_name || '');
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!profile?.id || !newName.trim()) return;
+    
+    setIsSavingName(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: newName.trim() })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, full_name: newName.trim() } : null);
+      setIsEditingName(false);
+      toast.success('Name updated successfully');
+    } catch (err) {
+      console.error('Error updating name:', err);
+      toast.error('Failed to update name');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -454,7 +485,42 @@ function ProfileContent() {
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <div className="mt-1 text-sm text-gray-900">{profile?.full_name}</div>
+                <div className="mt-1">
+                  {isEditingName ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="Enter your name"
+                      />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={isSavingName || !newName.trim()}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                      >
+                        {isSavingName ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingName(false)}
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-900">{profile?.full_name}</div>
+                      <button
+                        onClick={handleEditName}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Email</label>
