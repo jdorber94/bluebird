@@ -58,14 +58,17 @@ export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   };
 
   const handleProfileClick = () => {
-    router.push('/profile');
+    window.location.href = '/profile';
   };
 
   return (
     <>
       <Menu as="div" className="relative inline-block text-left">
         <div>
-          <Menu.Button className={`flex items-center ${isCollapsed ? 'justify-center w-10 h-10' : 'space-x-3 px-4 py-2'} hover:bg-gray-100 rounded-md`}>
+          <Menu.Button
+            onClick={handleProfileClick}
+            className={`flex items-center ${isCollapsed ? 'justify-center w-10 h-10' : 'space-x-3 px-4 py-2'} hover:bg-gray-100 rounded-md`}
+          >
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
               {getInitial()}
             </div>
