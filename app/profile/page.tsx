@@ -163,8 +163,19 @@ function ProfileContent() {
 
     const pollForUpdates = async () => {
       if (pollCount >= 10) {
-        console.log('Reached maximum poll attempts');
+        console.log('Reached maximum poll attempts. Final state:', {
+          profile: {
+            id: profile?.id,
+            planType: profile?.plan_type
+          },
+          subscription: {
+            planType: subscription?.plan_type,
+            status: subscription?.status
+          },
+          attempts: pollCount
+        });
         clearInterval(pollInterval);
+        toast.error('Subscription update is taking longer than expected. Please refresh the page or contact support if the issue persists.');
         return;
       }
 
@@ -174,7 +185,24 @@ function ProfileContent() {
 
       // Check if we've received pro status
       const hasProStatus = profile?.plan_type === 'pro' || subscription?.plan_type === 'pro';
-      if (hasProStatus) {
+      const isActive = subscription?.status === 'active';
+      
+      console.log('Poll update check:', {
+        attempt: pollCount,
+        hasProStatus,
+        isActive,
+        profile: {
+          id: profile?.id,
+          planType: profile?.plan_type
+        },
+        subscription: {
+          planType: subscription?.plan_type,
+          status: subscription?.status,
+          periodEnd: subscription?.current_period_end
+        }
+      });
+
+      if (hasProStatus && isActive) {
         console.log('Pro status confirmed, stopping polling');
         clearInterval(pollInterval);
         toast.success('Your subscription has been activated!');
@@ -187,7 +215,7 @@ function ProfileContent() {
       pollInterval = setInterval(pollForUpdates, 2000);
       return () => clearInterval(pollInterval);
     }
-  }, [searchParams]);
+  }, [searchParams, profile?.plan_type, subscription?.plan_type, subscription?.status]);
 
   // Add manual refresh capability
   const handleRefresh = async () => {

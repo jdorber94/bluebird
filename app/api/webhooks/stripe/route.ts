@@ -300,7 +300,8 @@ export async function POST(req: NextRequest) {
             currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
             cancelAtPeriodEnd: subscription.cancel_at_period_end,
             priceId: subscription.items.data[0].price.id,
-            items: subscription.items.data
+            items: subscription.items.data,
+            metadata: subscription.metadata
           });
           
           const customerId = subscription.customer as string;
@@ -309,7 +310,11 @@ export async function POST(req: NextRequest) {
           console.log('Determining plan type from price ID:', {
             receivedPriceId: priceId,
             expectedProPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
-            allPriceIds: subscription.items.data.map(item => item.price.id)
+            allPriceIds: subscription.items.data.map(item => item.price.id),
+            environment: {
+              NEXT_PUBLIC_STRIPE_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+              NODE_ENV: process.env.NODE_ENV
+            }
           });
 
           // Determine plan type from price ID
@@ -318,31 +323,49 @@ export async function POST(req: NextRequest) {
             planType = 'pro';
             console.log('Setting plan type to pro - price ID matched');
           } else {
-            console.warn('Price ID did not match expected pro price ID - keeping plan as free');
+            console.warn('Price ID did not match expected pro price ID - keeping plan as free', {
+              received: priceId,
+              expected: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
+            });
           }
 
           // First update the users table
           console.log('Updating user plan type to:', planType);
-          const { data: userData, error: userUpdateError } = await supabase
-            .from('users')
-            .update({ 
-              plan_type: planType,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', customerId)
-            .select()
-            .single();
+          try {
+            const { data: userData, error: userUpdateError } = await supabase
+              .from('users')
+              .update({ 
+                plan_type: planType,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', customerId)
+              .select()
+              .single();
 
-          if (userUpdateError) {
-            console.error('Error updating user plan:', userUpdateError);
-            throw new Error(`Error updating user plan: ${userUpdateError.message}`);
+            if (userUpdateError) {
+              console.error('Error updating user plan:', {
+                error: userUpdateError,
+                context: {
+                  customerId,
+                  planType,
+                  errorCode: userUpdateError.code,
+                  errorMessage: userUpdateError.message,
+                  errorDetails: userUpdateError.details
+                }
+              });
+              throw new Error(`Error updating user plan: ${userUpdateError.message}`);
+            }
+
+            console.log('Successfully updated user plan:', {
+              userId: customerId,
+              newPlanType: userData.plan_type,
+              updatedAt: userData.updated_at,
+              fullUserData: userData
+            });
+          } catch (error: any) {
+            console.error('Error updating user plan:', error);
+            throw error;
           }
-
-          console.log('Successfully updated user plan:', {
-            userId: customerId,
-            newPlanType: userData.plan_type,
-            updatedAt: userData.updated_at
-          });
 
           // Then update the subscription record
           const subscriptionUpdate = {
