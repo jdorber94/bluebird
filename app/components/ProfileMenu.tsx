@@ -57,6 +57,10 @@ export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
     return profile.full_name.charAt(0).toUpperCase();
   };
 
+  const handleProfileClick = () => {
+    router.push('/profile');
+  };
+
   return (
     <>
       <Menu as="div" className="relative inline-block text-left">
@@ -90,7 +94,7 @@ export default function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
               <Menu.Item>
                 {({ active }: { active: boolean }) => (
                   <button
-                    onClick={() => setIsProfileModalOpen(true)}
+                    onClick={handleProfileClick}
                     className={`${
                       active ? 'bg-gray-100' : ''
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
