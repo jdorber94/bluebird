@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 
 interface DateRangeFilterProps {
   onFilterChange: (month: string, year: number) => void;
@@ -31,11 +32,12 @@ const DateRangeFilter = ({ onFilterChange, className = '' }: DateRangeFilterProp
     onFilterChange(selectedMonth, year);
   };
 
-  const selectClassName = "w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-colors duration-200";
+  const selectClassName = "appearance-none bg-transparent pl-3 pr-8 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md cursor-pointer";
+  const wrapperClassName = "relative inline-block border border-gray-200 rounded-md hover:border-gray-300 transition-colors duration-200";
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      <div className="relative">
+      <div className={wrapperClassName}>
         <select
           value={selectedMonth}
           onChange={handleMonthChange}
@@ -47,12 +49,10 @@ const DateRangeFilter = ({ onFilterChange, className = '' }: DateRangeFilterProp
             </option>
           ))}
         </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
-          ▼
-        </div>
+        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
       </div>
 
-      <div className="relative">
+      <div className={wrapperClassName}>
         <select
           value={selectedYear}
           onChange={handleYearChange}
@@ -64,9 +64,7 @@ const DateRangeFilter = ({ onFilterChange, className = '' }: DateRangeFilterProp
             </option>
           ))}
         </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
-          ▼
-        </div>
+        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
       </div>
     </div>
   );
