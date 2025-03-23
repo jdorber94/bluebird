@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import InlineNotes from '../components/InlineNotes';
 import CRMLink from '../components/CRMLink';
 import DashboardDateFilter from '../components/DashboardDateFilter';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
 
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const router = useRouter();
 
   // Close menu when clicking outside
@@ -85,6 +87,53 @@ export default function Dashboard() {
     init();
   }, [router]);
 
+  // Set up real-time subscription
+  useEffect(() => {
+    const setupRealtimeSubscription = async () => {
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      // Clean up any existing subscription
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+      }
+
+      // Set up new subscription
+      const channel = supabase
+        .channel('demo_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all changes
+            schema: 'public',
+            table: 'demos',
+            filter: `user_id=eq.${user.id}` // Only listen to changes for current user's demos
+          },
+          async (payload) => {
+            console.log('Received real-time update:', payload);
+            
+            // Reload the entire demos list to ensure consistency
+            await loadDemos();
+            
+            // Force a router refresh to update any server components
+            router.refresh();
+          }
+        )
+        .subscribe();
+
+      realtimeChannelRef.current = channel;
+    };
+
+    setupRealtimeSubscription();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+      }
+    };
+  }, []);
+
   const loadDemos = async () => {
     try {
       const { data, error, subscription: subData } = await getDemos();
@@ -117,10 +166,6 @@ export default function Dashboard() {
   const handleUpdate = async (id: string, field: keyof Demo, value: any) => {
     console.log('Handling update:', { id, field, value });
     
-    if (field === 'url') {
-      console.log('Updating CRM URL:', { id, url: value });
-    }
-    
     // Find the demo and update it locally first
     const demoIndex = demos.findIndex(d => d.id === id);
     if (demoIndex === -1) {
@@ -130,24 +175,34 @@ export default function Dashboard() {
 
     // Create a new array with the updated demo
     const updatedDemos = [...demos];
-    updatedDemos[demoIndex] = {
+    const updatedDemo = {
       ...updatedDemos[demoIndex],
-      [field]: value
+      [field]: value,
+      updated_at: new Date().toISOString()
     };
-    console.log('Updated demo:', updatedDemos[demoIndex]);
+    updatedDemos[demoIndex] = updatedDemo;
 
-    // Update the state immediately
+    // Update the state immediately (optimistic update)
     setDemos(updatedDemos);
+    setFilteredDemos(prev => 
+      prev.map(d => d.id === id ? updatedDemo : d)
+    );
 
-    // Then update the database
-    const { error } = await updateDemo(id, { [field]: value });
-    if (error) {
+    try {
+      // Then update the database
+      const { error } = await updateDemo(id, { [field]: value });
+      if (error) {
+        throw error;
+      }
+      console.log('Database update successful for field:', field);
+    } catch (error) {
       console.error('Error updating demo:', error);
       // Revert the change if there was an error
       setDemos(demos);
-      return;
+      setFilteredDemos(prev => 
+        prev.map(d => d.id === id ? demos[demoIndex] : d)
+      );
     }
-    console.log('Database update successful for field:', field);
   };
 
   const handleCheckboxChange = async (
@@ -157,32 +212,42 @@ export default function Dashboard() {
   ) => {
     const checked = e.target.checked;
     
-    // Update only the checkbox state
-    const updates = {
-      [field]: checked
-    };
-    
     // Find the demo and update it locally first
     const demoIndex = demos.findIndex(d => d.id === id);
     if (demoIndex === -1) return;
 
     // Create a new array with the updated demo
     const updatedDemos = [...demos];
-    updatedDemos[demoIndex] = {
+    const updatedDemo = {
       ...updatedDemos[demoIndex],
-      ...updates
+      [field]: checked,
+      [`${field}_date`]: checked ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString()
     };
+    updatedDemos[demoIndex] = updatedDemo;
 
-    // Update the state immediately
+    // Update the state immediately (optimistic update)
     setDemos(updatedDemos);
+    setFilteredDemos(prev => 
+      prev.map(d => d.id === id ? updatedDemo : d)
+    );
 
-    // Then update the database
-    const { error } = await updateDemo(id, updates);
-    if (error) {
+    try {
+      // Then update the database
+      const { error } = await updateDemo(id, {
+        [field]: checked,
+        [`${field}_date`]: checked ? new Date().toISOString() : null
+      });
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
       console.error('Error updating demo:', error);
       // Revert the change if there was an error
       setDemos(demos);
-      return;
+      setFilteredDemos(prev => 
+        prev.map(d => d.id === id ? demos[demoIndex] : d)
+      );
     }
   };
 
