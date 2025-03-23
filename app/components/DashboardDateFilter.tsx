@@ -8,14 +8,14 @@ interface DashboardDateFilterProps {
 
 const DashboardDateFilter = ({ onFilterChange }: DashboardDateFilterProps) => {
   return (
-    <div className="flex flex-col gap-2 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-gray-700">Time Period</h2>
-        <div className="text-xs text-gray-500">
-          Showing data for selected period
-        </div>
+    <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-medium text-gray-700">Filter Demos</h2>
+        <DateRangeFilter onFilterChange={onFilterChange} />
       </div>
-      <DateRangeFilter onFilterChange={onFilterChange} />
+      <div className="text-xs text-gray-500">
+        Showing data for selected period
+      </div>
     </div>
   );
 };

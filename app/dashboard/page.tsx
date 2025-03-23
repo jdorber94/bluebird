@@ -11,11 +11,18 @@ import { Database } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
 import InlineNotes from '../components/InlineNotes';
 import CRMLink from '../components/CRMLink';
+import DashboardDateFilter from '../components/DashboardDateFilter';
 
 type Demo = Database['public']['Tables']['demos']['Row'];
 
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 export default function Dashboard() {
   const [demos, setDemos] = useState<Demo[]>([]);
+  const [filteredDemos, setFilteredDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<{
@@ -85,6 +92,7 @@ export default function Dashboard() {
         console.error('Error loading demos:', error);
         setError('Failed to load demos. Please try refreshing the page.');
         setDemos([]);
+        setFilteredDemos([]);
       } else {
         setError(null);
         setSubscription(subData || null);
@@ -96,11 +104,13 @@ export default function Dashboard() {
           return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
         });
         setDemos(sortedDemos);
+        setFilteredDemos(sortedDemos); // Initialize filtered demos with all demos
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
       setError('An unexpected error occurred. Please try refreshing the page.');
       setDemos([]);
+      setFilteredDemos([]);
     }
   };
 
@@ -398,6 +408,17 @@ export default function Dashboard() {
     }
   };
 
+  // Add this new function to handle date filtering
+  const handleDateFilter = (month: string, year: number) => {
+    const filtered = demos.filter(demo => {
+      if (!demo.demo_date) return false;
+      const demoDate = new Date(demo.demo_date);
+      return demoDate.getMonth() === months.indexOf(month) && 
+             demoDate.getFullYear() === year;
+    });
+    setFilteredDemos(filtered);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -480,13 +501,14 @@ export default function Dashboard() {
           )}
 
           <div className="p-4 md:p-8 mt-16">
+            <DashboardDateFilter onFilterChange={handleDateFilter} />
             {/* Demo Table */}
             <div className="bg-white rounded-lg shadow overflow-x-auto">
               {loading ? (
                 <div className="p-8 text-center text-gray-500">Loading demos...</div>
               ) : error ? (
                 <div className="p-8 text-center text-red-500">{error}</div>
-              ) : demos.length === 0 ? (
+              ) : filteredDemos.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
               ) : (
                 <DragDropContext onDragEnd={onDragEnd}>
@@ -517,7 +539,7 @@ export default function Dashboard() {
                           {...provided.droppableProps}
                           className="divide-y divide-gray-200"
                         >
-                          {demos.map((demo, index) => (
+                          {filteredDemos.map((demo, index) => (
                             <Draggable key={demo.id} draggableId={demo.id} index={index}>
                               {(provided, snapshot) => (
                                 <tr
