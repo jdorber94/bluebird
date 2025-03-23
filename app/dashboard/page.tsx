@@ -501,6 +501,17 @@ export default function Dashboard() {
           )}
 
           <div className="p-4 md:p-8 mt-16">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <a
+                  href="/dashboard/analytics"
+                  className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm font-medium transition-colors"
+                >
+                  View Analytics
+                </a>
+              </div>
+            </div>
             <DashboardDateFilter onFilterChange={handleDateFilter} />
             {/* Demo Table */}
             <div className="bg-white rounded-lg shadow overflow-x-auto">
