@@ -420,272 +420,218 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 p-4 flex flex-col transition-all duration-300 ease-in-out relative`}>
-        <div className="flex items-center justify-between mb-8">
-          <h1 className={`text-xl font-semibold ${isSidebarCollapsed ? 'hidden' : 'block'}`}>Bluebird</h1>
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-          >
-            {isSidebarCollapsed ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            )}
-          </button>
-        </div>
-        <nav className="flex-1 space-y-2">
-          <a href="#" className={`flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className={`ml-2 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>Dashboard</span>
-          </a>
-          <a href="/dashboard/analytics" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span className={`ml-2 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>Analytics</span>
-          </a>
-        </nav>
-        
-        {/* Settings and Profile Section */}
-        <div className="border-t border-gray-200 pt-4 mt-4">
-          <a href="#" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mb-4 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className={`ml-2 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>Settings</span>
-          </a>
-          <div className={`${isSidebarCollapsed ? 'px-0' : ''}`}>
-            <ProfileMenu isCollapsed={isSidebarCollapsed} />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-100">
+      <div className="fixed top-0 right-0 z-50 p-4 md:p-8">
+        <button 
+          onClick={handleAddDemo}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150 shadow-lg"
+        >
+          <span className="mr-2">+</span>
+          Add Demo
+        </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="min-h-screen bg-gray-100">
-          <div className="fixed top-0 right-0 z-50 p-4 md:p-8">
-            <button 
-              onClick={handleAddDemo}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150 shadow-lg"
+      {subscription?.isFreeUser && subscription.totalCount > 0 && (
+        <div className="p-4 md:p-8 mt-16 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="text-blue-800">
+                {subscription.totalCount >= 10 
+                  ? 'You have reached the limit of 10 demos for free accounts.' 
+                  : `You have used ${subscription.totalCount} of 10 available demos.`}
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                Upgrade to premium for unlimited demos and advanced features.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/profile')}
+              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
             >
-              <span className="mr-2">+</span>
-              Add Demo
+              Upgrade Now
             </button>
           </div>
+        </div>
+      )}
 
-          {subscription?.isFreeUser && subscription.totalCount > 0 && (
-            <div className="p-4 md:p-8 mt-16 mb-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-blue-800">
-                    {subscription.totalCount >= 10 
-                      ? 'You have reached the limit of 10 demos for free accounts.' 
-                      : `You have used ${subscription.totalCount} of 10 available demos.`}
-                  </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Upgrade to premium for unlimited demos and advanced features.
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push('/profile')}
-                  className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
-                >
-                  Upgrade Now
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="p-4 md:p-8 mt-16">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <DashboardDateFilter onFilterChange={handleDateFilter} />
-              </div>
-            </div>
-            {/* Demo Table */}
-            <div className="bg-white rounded-lg shadow overflow-x-auto">
-              {loading ? (
-                <div className="p-8 text-center text-gray-500">Loading demos...</div>
-              ) : error ? (
-                <div className="p-8 text-center text-red-500">{error}</div>
-              ) : filteredDemos.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
-              ) : (
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <table className="min-w-full divide-y divide-gray-200 bg-white">
-                    <thead>
-                      <tr>
-                        <th className="w-10 px-2"></th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Email Sent</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Email Date</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                        <th className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"></th>
-                      </tr>
-                    </thead>
-                    <Droppable droppableId="table" direction="vertical">
-                      {(provided) => (
-                        <tbody
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className="divide-y divide-gray-200"
-                        >
-                          {filteredDemos.map((demo, index) => (
-                            <Draggable key={demo.id} draggableId={demo.id} index={index}>
-                              {(provided, snapshot) => (
-                                <tr
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`${snapshot.isDragging ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150`}
-                                >
-                                  <td className="w-10 px-2">
-                                    <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600 text-center">
-                                      ⋮⋮
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <EditableCell
-                                      value={demo.name || ''}
-                                      onChange={(value) => handleUpdate(demo.id, 'name', value)}
-                                      className="text-sm font-medium text-gray-900"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <CRMLink
-                                      url={demo.url}
-                                      onChange={(url) => handleUpdate(demo.id, 'url', url)}
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <EditableCell
-                                      value={formatDate(demo.date_booked)}
-                                      onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
-                                      type="date"
-                                      className="text-sm text-gray-500"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <EditableCell
-                                      value={formatDate(demo.demo_date)}
-                                      onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
-                                      type="date"
-                                      className="text-sm text-gray-500"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <EditableCell
-                                      value={demo.demo_time || '09:00'}
-                                      onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
-                                      type="time"
-                                      className="text-sm text-gray-500"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                                    <input 
-                                      type="checkbox" 
-                                      checked={demo.email_sent}
-                                      className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
-                                      onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <EditableCell
-                                      value={formatDate(demo.email_sent_date)}
-                                      onChange={(value) => handleUpdate(demo.id, 'email_sent_date', value)}
-                                      type="date"
-                                      className="text-sm text-gray-500"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                                    <input 
-                                      type="checkbox" 
-                                      checked={demo.call_made}
-                                      className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
-                                      onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <EditableCell
-                                      value={formatDate(demo.call_made_date)}
-                                      onChange={(value) => handleUpdate(demo.id, 'call_made_date', value)}
-                                      type="date"
-                                      className="text-sm text-gray-500"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                                    <button
-                                      onClick={() => handleStatusChange(demo.id)}
-                                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    >
-                                      {getStatusDisplay(demo.status)}
-                                    </button>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                                    <button
-                                      onClick={() => handleShowedChange(demo.id)}
-                                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    >
-                                      {getShowedDisplay(demo.showed)}
-                                    </button>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                                    <select
-                                      value={demo.score || 3}
-                                      onChange={(e) => handleUpdate(demo.id, 'score', parseInt(e.target.value))}
-                                      className="block w-20 mx-auto text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                      {[1, 2, 3, 4, 5].map((value) => (
-                                        <option key={value} value={value}>{value}</option>
-                                      ))}
-                                    </select>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <InlineNotes
-                                      notes={demo.notes || ''}
-                                      onSave={(notes) => handleUpdate(demo.id, 'notes', notes)}
-                                      demoTitle={demo.name || 'Untitled Demo'}
-                                    />
-                                  </td>
-                                  <td className="pl-2 pr-4 py-4 whitespace-nowrap text-center">
-                                    <ActionMenu 
-                                      demoId={demo.id}
-                                      onDelete={handleDeleteDemo}
-                                    />
-                                  </td>
-                                </tr>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </tbody>
-                      )}
-                    </Droppable>
-                  </table>
-                </DragDropContext>
-              )}
-            </div>
+      <div className="p-4 md:p-8 mt-16">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <DashboardDateFilter onFilterChange={handleDateFilter} />
           </div>
+        </div>
+        {/* Demo Table */}
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">Loading demos...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">{error}</div>
+          ) : filteredDemos.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No demos yet. Click "Add Demo" to create one.</div>
+          ) : (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <table className="min-w-full divide-y divide-gray-200 bg-white">
+                <thead>
+                  <tr>
+                    <th className="w-10 px-2"></th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Booked</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demo Time</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Email Sent</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Email Date</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Call Made</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Call Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showed</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"></th>
+                  </tr>
+                </thead>
+                <Droppable droppableId="table" direction="vertical">
+                  {(provided) => (
+                    <tbody
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="divide-y divide-gray-200"
+                    >
+                      {filteredDemos.map((demo, index) => (
+                        <Draggable key={demo.id} draggableId={demo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <tr
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`${snapshot.isDragging ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150`}
+                            >
+                              <td className="w-10 px-2">
+                                <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600 text-center">
+                                  ⋮⋮
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <EditableCell
+                                  value={demo.name || ''}
+                                  onChange={(value) => handleUpdate(demo.id, 'name', value)}
+                                  className="text-sm font-medium text-gray-900"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <CRMLink
+                                  url={demo.url}
+                                  onChange={(url) => handleUpdate(demo.id, 'url', url)}
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <EditableCell
+                                  value={formatDate(demo.date_booked)}
+                                  onChange={(value) => handleUpdate(demo.id, 'date_booked', value)}
+                                  type="date"
+                                  className="text-sm text-gray-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <EditableCell
+                                  value={formatDate(demo.demo_date)}
+                                  onChange={(value) => handleUpdate(demo.id, 'demo_date', value)}
+                                  type="date"
+                                  className="text-sm text-gray-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <EditableCell
+                                  value={demo.demo_time || '09:00'}
+                                  onChange={(value) => handleUpdate(demo.id, 'demo_time', value)}
+                                  type="time"
+                                  className="text-sm text-gray-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={demo.email_sent}
+                                  className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
+                                  onChange={(e) => handleCheckboxChange(e, demo.id, 'email_sent')}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <EditableCell
+                                  value={formatDate(demo.email_sent_date)}
+                                  onChange={(value) => handleUpdate(demo.id, 'email_sent_date', value)}
+                                  type="date"
+                                  className="text-sm text-gray-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={demo.call_made}
+                                  className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
+                                  onChange={(e) => handleCheckboxChange(e, demo.id, 'call_made')}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <EditableCell
+                                  value={formatDate(demo.call_made_date)}
+                                  onChange={(value) => handleUpdate(demo.id, 'call_made_date', value)}
+                                  type="date"
+                                  className="text-sm text-gray-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <button
+                                  onClick={() => handleStatusChange(demo.id)}
+                                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {getStatusDisplay(demo.status)}
+                                </button>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <button
+                                  onClick={() => handleShowedChange(demo.id)}
+                                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {getShowedDisplay(demo.showed)}
+                                </button>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <select
+                                  value={demo.score || 3}
+                                  onChange={(e) => handleUpdate(demo.id, 'score', parseInt(e.target.value))}
+                                  className="block w-20 mx-auto text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  {[1, 2, 3, 4, 5].map((value) => (
+                                    <option key={value} value={value}>{value}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <InlineNotes
+                                  notes={demo.notes || ''}
+                                  onSave={(notes) => handleUpdate(demo.id, 'notes', notes)}
+                                  demoTitle={demo.name || 'Untitled Demo'}
+                                />
+                              </td>
+                              <td className="pl-2 pr-4 py-4 whitespace-nowrap text-center">
+                                <ActionMenu 
+                                  demoId={demo.id}
+                                  onDelete={handleDeleteDemo}
+                                />
+                              </td>
+                            </tr>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </tbody>
+                  )}
+                </Droppable>
+              </table>
+            </DragDropContext>
+          )}
         </div>
       </div>
     </div>
