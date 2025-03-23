@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import {
@@ -19,56 +19,157 @@ import {
   Legend,
 } from "recharts";
 import DashboardDateFilter from "../../components/DashboardDateFilter";
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/lib/database.types';
 
-// Mock data - in a real app, this would come from an API call
-const mockShowRateData = [
-  { month: "Jan", rate: 65 },
-  { month: "Feb", rate: 72 },
-  { month: "Mar", rate: 68 },
-  { month: "Apr", rate: 75 },
-  { month: "May", rate: 80 },
-  { month: "Jun", rate: 85 },
-];
+type Demo = Database['public']['Tables']['demos']['Row'];
 
-const mockRepPerformance = [
-  { name: "Alex", shows: 45, noshows: 12, rebooks: 8 },
-  { name: "Jamie", shows: 52, noshows: 8, rebooks: 5 },
-  { name: "Taylor", shows: 38, noshows: 15, rebooks: 10 },
-  { name: "Morgan", shows: 49, noshows: 10, rebooks: 7 },
-  { name: "Casey", shows: 42, noshows: 13, rebooks: 9 },
-];
+// Helper function to group demos by month
+const groupDemosByMonth = (demos: Demo[]) => {
+  const monthlyData = new Map<string, { total: number, showed: number }>();
+  
+  demos.forEach(demo => {
+    const date = new Date(demo.demo_date);
+    const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+    
+    const current = monthlyData.get(monthKey) || { total: 0, showed: 0 };
+    current.total += 1;
+    if (demo.showed === 'Yes') current.showed += 1;
+    
+    monthlyData.set(monthKey, current);
+  });
 
-const mockStatusDistribution = [
-  { name: "Showed", value: 65, color: "#22c55e" },
-  { name: "No Show", value: 20, color: "#ef4444" },
-  { name: "Rebooked", value: 15, color: "#3b82f6" },
-];
+  return Array.from(monthlyData.entries()).map(([month, data]) => ({
+    month,
+    rate: data.total > 0 ? (data.showed / data.total) * 100 : 0
+  }));
+};
 
-const mockTimeOfDayData = [
-  { timeSlot: "8-10 AM", rate: 78 },
-  { timeSlot: "10-12 PM", rate: 82 },
-  { timeSlot: "12-2 PM", rate: 65 },
-  { timeSlot: "2-4 PM", rate: 72 },
-  { timeSlot: "4-6 PM", rate: 68 },
-];
+// Helper function to group demos by time of day
+const groupDemosByTimeOfDay = (demos: Demo[]) => {
+  type TimeSlot = '8-10 AM' | '10-12 PM' | '12-2 PM' | '2-4 PM' | '4-6 PM';
+  type TimeSlotData = { total: number; showed: number };
+  
+  const timeSlots: Record<TimeSlot, TimeSlotData> = {
+    '8-10 AM': { total: 0, showed: 0 },
+    '10-12 PM': { total: 0, showed: 0 },
+    '12-2 PM': { total: 0, showed: 0 },
+    '2-4 PM': { total: 0, showed: 0 },
+    '4-6 PM': { total: 0, showed: 0 }
+  };
+
+  demos.forEach(demo => {
+    const time = demo.demo_time;
+    if (!time) return;
+
+    const hour = parseInt(time.split(':')[0]);
+    let slot: TimeSlot | undefined;
+    if (hour >= 8 && hour < 10) slot = '8-10 AM';
+    else if (hour >= 10 && hour < 12) slot = '10-12 PM';
+    else if (hour >= 12 && hour < 14) slot = '12-2 PM';
+    else if (hour >= 14 && hour < 16) slot = '2-4 PM';
+    else if (hour >= 16 && hour < 18) slot = '4-6 PM';
+    else return;
+
+    timeSlots[slot].total += 1;
+    if (demo.showed === 'Yes') timeSlots[slot].showed += 1;
+  });
+
+  return Object.entries(timeSlots).map(([timeSlot, data]) => ({
+    timeSlot,
+    rate: data.total > 0 ? (data.showed / data.total) * 100 : 0
+  }));
+};
+
+// Helper function to calculate status distribution
+const calculateStatusDistribution = (demos: Demo[]) => {
+  const distribution = {
+    'Showed': { value: 0, color: '#22c55e' },
+    'No Show': { value: 0, color: '#ef4444' },
+    'Rebooked': { value: 0, color: '#3b82f6' }
+  };
+
+  demos.forEach(demo => {
+    if (demo.showed === 'Yes') distribution['Showed'].value++;
+    else if (demo.showed === 'No') distribution['No Show'].value++;
+    if (demo.status === 'Rebooked') distribution['Rebooked'].value++;
+  });
+
+  return Object.entries(distribution).map(([name, { value, color }]) => ({
+    name,
+    value,
+    color
+  }));
+};
 
 export default function AnalyticsPage() {
   const [currentMonth, setCurrentMonth] = useState<string>(new Date().toLocaleString('default', { month: 'long' }));
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [demos, setDemos] = useState<Demo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // In a real app, we would fetch data based on the selected month and year
+  useEffect(() => {
+    const loadDemos = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setError('Please sign in to view analytics');
+          return;
+        }
+
+        const { data, error: fetchError } = await supabase
+          .from('demos')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (fetchError) throw fetchError;
+        setDemos(data || []);
+      } catch (err) {
+        console.error('Error loading demos:', err);
+        setError('Failed to load analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDemos();
+  }, []);
+
   const handleFilterChange = (month: string, year: number) => {
     setCurrentMonth(month);
     setCurrentYear(year);
-    // Would trigger data fetching here
   };
-  
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading analytics...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
+  }
+
+  // Filter demos based on selected month and year
+  const filteredDemos = demos.filter(demo => {
+    const demoDate = new Date(demo.demo_date);
+    return (
+      demoDate.getMonth() === new Date(`${currentMonth} 1`).getMonth() &&
+      demoDate.getFullYear() === currentYear
+    );
+  });
+
   // Calculate summary metrics
-  const avgShowRate = mockShowRateData.reduce((acc, curr) => acc + curr.rate, 0) / mockShowRateData.length;
-  const bestTimeSlot = [...mockTimeOfDayData].sort((a, b) => b.rate - a.rate)[0];
-  const topPerformer = [...mockRepPerformance].sort(
-    (a, b) => b.shows / (b.shows + b.noshows) - a.shows / (a.shows + a.noshows)
-  )[0];
+  const showRate = demos.length > 0 
+    ? (demos.filter(d => d.showed === 'Yes').length / demos.length) * 100 
+    : 0;
+
+  const timeSlotData = groupDemosByTimeOfDay(demos);
+  const bestTimeSlot = [...timeSlotData].sort((a, b) => b.rate - a.rate)[0];
+
+  const showRateData = groupDemosByMonth(demos);
+  const statusDistribution = calculateStatusDistribution(demos);
 
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -84,8 +185,8 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Show Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{avgShowRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Across all SDRs</p>
+            <div className="text-2xl font-bold">{showRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">All time average</p>
           </CardContent>
         </Card>
         
@@ -94,20 +195,18 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Best Performing Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bestTimeSlot.timeSlot}</div>
-            <p className="text-xs text-muted-foreground">{bestTimeSlot.rate}% show rate</p>
+            <div className="text-2xl font-bold">{bestTimeSlot?.timeSlot || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground">{bestTimeSlot ? `${bestTimeSlot.rate.toFixed(1)}% show rate` : 'No data'}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Top Performer</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Demos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{topPerformer.name}</div>
-            <p className="text-xs text-muted-foreground">
-              {(topPerformer.shows / (topPerformer.shows + topPerformer.noshows) * 100).toFixed(1)}% show rate
-            </p>
+            <div className="text-2xl font-bold">{filteredDemos.length}</div>
+            <p className="text-xs text-muted-foreground">{`${currentMonth} ${currentYear}`}</p>
           </CardContent>
         </Card>
         
@@ -116,10 +215,8 @@ export default function AnalyticsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Demos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {mockRepPerformance.reduce((acc, curr) => acc + curr.shows + curr.noshows, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">Scheduled this period</p>
+            <div className="text-2xl font-bold">{demos.length}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
       </div>
@@ -128,7 +225,6 @@ export default function AnalyticsPage() {
       <Tabs defaultValue="trends">
         <TabsList>
           <TabsTrigger value="trends">Trends</TabsTrigger>
-          <TabsTrigger value="reps">Rep Performance</TabsTrigger>
           <TabsTrigger value="timing">Timing Analysis</TabsTrigger>
         </TabsList>
         
@@ -139,7 +235,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockShowRateData}>
+                <LineChart data={showRateData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis domain={[0, 100]} />
@@ -164,7 +260,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={mockStatusDistribution}
+                    data={statusDistribution}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -172,65 +268,13 @@ export default function AnalyticsPage() {
                     outerRadius={100}
                     label
                   >
-                    {mockStatusDistribution.map((entry, index) => (
+                    {statusDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip />
                   <Legend />
                 </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="reps" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Rep Performance Comparison</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={mockRepPerformance}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="shows" fill="#22c55e" name="Shows" />
-                  <Bar dataKey="noshows" fill="#ef4444" name="No Shows" />
-                  <Bar dataKey="rebooks" fill="#3b82f6" name="Rebooks" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Show Rate by Rep</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={mockRepPerformance.map(rep => ({
-                    name: rep.name,
-                    rate: (rep.shows / (rep.shows + rep.noshows) * 100).toFixed(1)
-                  }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Bar dataKey="rate" fill="#8884d8" name="Show Rate %" />
-                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -243,7 +287,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockTimeOfDayData}>
+                <BarChart data={timeSlotData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="timeSlot" />
                   <YAxis domain={[0, 100]} />
@@ -261,13 +305,29 @@ export default function AnalyticsPage() {
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={[
-                    { day: "Monday", rate: 72 },
-                    { day: "Tuesday", rate: 78 },
-                    { day: "Wednesday", rate: 81 },
-                    { day: "Thursday", rate: 76 },
-                    { day: "Friday", rate: 65 },
-                  ]}
+                  data={demos.reduce((acc, demo) => {
+                    const day = new Date(demo.demo_date).toLocaleString('en-US', { weekday: 'long' });
+                    const existing = acc.find(d => d.day === day);
+                    if (existing) {
+                      existing.total++;
+                      if (demo.showed === 'Yes') existing.showed++;
+                    } else {
+                      acc.push({ 
+                        day, 
+                        total: 1, 
+                        showed: demo.showed === 'Yes' ? 1 : 0,
+                        rate: demo.showed === 'Yes' ? 100 : 0
+                      });
+                    }
+                    return acc.map(d => ({
+                      ...d,
+                      rate: (d.showed / d.total) * 100
+                    }));
+                  }, [] as Array<{ day: string; total: number; showed: number; rate: number }>)
+                  .sort((a, b) => {
+                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    return days.indexOf(a.day) - days.indexOf(b.day);
+                  })}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
