@@ -416,11 +416,14 @@ export default function Dashboard() {
         // Add new demo and resort the list
         setDemos(prevDemos => {
           const updatedDemos = [...prevDemos, data];
-          return updatedDemos.sort((a, b) => {
+          const sortedDemos = updatedDemos.sort((a, b) => {
             if (!a.demo_date) return 1;
             if (!b.demo_date) return -1;
             return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
           });
+          // Update filtered demos with the same sorting
+          setFilteredDemos(sortedDemos);
+          return sortedDemos;
         });
       }
     } catch (err) {
