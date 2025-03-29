@@ -216,14 +216,26 @@ export default function Dashboard() {
     const demoIndex = demos.findIndex(d => d.id === id);
     if (demoIndex === -1) return;
 
+    const currentDemo = demos[demoIndex];
+    const updateData: Partial<Demo> = { 
+      [field]: checked,
+      updated_at: new Date().toISOString() 
+    };
+
+    // Determine the correct date field based on the boolean field
+    const dateField = field === 'email_sent' ? 'email_sent_date' : 'call_made_date';
+
+    // Only set the date if checking the box AND the date isn't already set
+    if (checked && !currentDemo[dateField]) {
+      updateData[dateField] = new Date().toISOString();
+    }
+
     // Create a new array with the updated demo
     const updatedDemos = [...demos];
     const updatedDemo = {
-      ...updatedDemos[demoIndex],
-      [field]: checked,
-      [`${field}_date`]: checked ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString()
-    };
+      ...currentDemo,
+      ...updateData
+    } as Demo;
     updatedDemos[demoIndex] = updatedDemo;
 
     // Update the state immediately (optimistic update)
@@ -233,11 +245,18 @@ export default function Dashboard() {
     );
 
     try {
-      // Then update the database
-      const { error } = await updateDemo(id, {
+      // Prepare the data for the database update, ensuring correct types
+      const dbUpdateData: { [key: string]: any } = {
         [field]: checked,
-        [`${field}_date`]: checked ? new Date().toISOString() : null
-      });
+        updated_at: new Date().toISOString(),
+      };
+      // Conditionally add the date field to the update if it was set
+      if (updateData[dateField]) {
+        dbUpdateData[dateField] = updateData[dateField];
+      }
+
+      // Then update the database
+      const { error } = await updateDemo(id, dbUpdateData);
       if (error) {
         throw error;
       }
