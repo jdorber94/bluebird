@@ -497,11 +497,23 @@ export default function Dashboard() {
 
   // Add this new function to handle date filtering
   const handleDateFilter = (month: string, year: number) => {
+    const targetMonthIndex = months.indexOf(month); // Get the 0-based index
+
     const filtered = demos.filter(demo => {
       if (!demo.demo_date) return false;
-      const demoDate = new Date(demo.demo_date);
-      return demoDate.getMonth() === months.indexOf(month) && 
-             demoDate.getFullYear() === year;
+
+      // Parse the date string directly to avoid timezone issues.
+      // Assumes demo_date is stored in a format like YYYY-MM-DD or ISO string.
+      try {
+        const datePart = demo.demo_date.substring(0, 10); // Extract "YYYY-MM-DD"
+        const demoYear = parseInt(datePart.substring(0, 4), 10);
+        const demoMonth = parseInt(datePart.substring(5, 7), 10) - 1; // Get 0-based month
+
+        return demoMonth === targetMonthIndex && demoYear === year;
+      } catch (e) {
+        console.error("Error parsing demo date string for filtering:", demo.demo_date, e);
+        return false; // Skip demos with unparseable dates
+      }
     });
     setFilteredDemos(filtered);
   };
