@@ -160,16 +160,55 @@ export default function AnalyticsPage() {
     );
   });
 
-  // Calculate summary metrics
-  const showRate = demos.length > 0 
-    ? (demos.filter(d => d.showed === 'Yes').length / demos.length) * 100 
+  // --- Current Period Calculations ---
+  const currentPeriodShowRate = filteredDemos.length > 0 
+    ? (filteredDemos.filter(d => d.showed === 'Yes').length / filteredDemos.length) * 100 
     : 0;
+  const currentPeriodDemoCount = filteredDemos.length;
 
-  const timeSlotData = groupDemosByTimeOfDay(demos);
+  // --- Previous Period Calculations ---
+  // Determine previous month and year
+  const currentDate = new Date(`${currentMonth} 1, ${currentYear}`);
+  currentDate.setMonth(currentDate.getMonth() - 1); // Go back one month
+  const previousMonth = currentDate.toLocaleString('default', { month: 'long' });
+  const previousYear = currentDate.getFullYear();
+
+  // Filter demos for the previous period
+  const previousPeriodDemos = demos.filter(demo => {
+    const demoDate = new Date(demo.demo_date);
+    return (
+      demoDate.getMonth() === currentDate.getMonth() &&
+      demoDate.getFullYear() === previousYear
+    );
+  });
+
+  // Calculate metrics for the previous period
+  const previousPeriodShowRate = previousPeriodDemos.length > 0 
+    ? (previousPeriodDemos.filter(d => d.showed === 'Yes').length / previousPeriodDemos.length) * 100 
+    : 0;
+  const previousPeriodDemoCount = previousPeriodDemos.length;
+
+  // --- Percentage Change Calculations ---
+  const calculatePercentageChange = (current: number, previous: number): number | null => {
+    if (previous === 0) return null; // Avoid division by zero
+    return ((current - previous) / previous) * 100;
+  };
+
+  const showRateChange = calculatePercentageChange(currentPeriodShowRate, previousPeriodShowRate);
+  const demoCountChange = calculatePercentageChange(currentPeriodDemoCount, previousPeriodDemoCount);
+
+  // --- Other Calculations (using all demos for now) ---
+  const timeSlotData = groupDemosByTimeOfDay(demos); 
   const bestTimeSlot = [...timeSlotData].sort((a, b) => b.rate - a.rate)[0];
+  const showRateData = groupDemosByMonth(demos); 
+  const statusDistribution = calculateStatusDistribution(filteredDemos); 
 
-  const showRateData = groupDemosByMonth(demos);
-  const statusDistribution = calculateStatusDistribution(demos);
+  // --- Helper to format percentage change ---
+  const formatChange = (change: number | null): string => {
+    if (change === null) return "vs N/A";
+    const sign = change >= 0 ? '+' : '';
+    return `${sign}${change.toFixed(1)}% vs prior period`;
+  };
 
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -181,11 +220,13 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Show Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Show Rate ({currentMonth})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{showRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">All time average</p>
+            <div className="text-2xl font-bold">{currentPeriodShowRate.toFixed(1)}%</div>
+            <p className={`text-xs ${showRateChange === null ? 'text-muted-foreground' : showRateChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatChange(showRateChange)}
+            </p>
           </CardContent>
         </Card>
         
@@ -201,11 +242,13 @@ export default function AnalyticsPage() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Demos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Demos ({currentMonth})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredDemos.length}</div>
-            <p className="text-xs text-muted-foreground">{`${currentMonth} ${currentYear}`}</p>
+            <div className="text-2xl font-bold">{currentPeriodDemoCount}</div>
+            <p className={`text-xs ${demoCountChange === null ? 'text-muted-foreground' : demoCountChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatChange(demoCountChange)}
+            </p>
           </CardContent>
         </Card>
         
