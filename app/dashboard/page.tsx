@@ -36,6 +36,8 @@ export default function Dashboard() {
   const menuRef = useRef<HTMLDivElement>(null);
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const router = useRouter();
+  const [currentMonth, setCurrentMonth] = useState('January');
+  const [currentYear, setCurrentYear] = useState(2024);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -153,7 +155,22 @@ export default function Dashboard() {
           return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
         });
         setDemos(sortedDemos);
-        setFilteredDemos(sortedDemos); // Initialize filtered demos with all demos
+
+        // Apply the initial filter based on the default month/year state
+        const defaultMonthIndex = months.indexOf(currentMonth);
+        const initiallyFilteredDemos = sortedDemos.filter(demo => {
+          if (!demo.demo_date) return false;
+          try {
+            const datePart = demo.demo_date.substring(0, 10);
+            const demoYear = parseInt(datePart.substring(0, 4), 10);
+            const demoMonth = parseInt(datePart.substring(5, 7), 10) - 1; 
+            return demoMonth === defaultMonthIndex && demoYear === currentYear;
+          } catch (e) {
+            console.error("Error parsing demo date string during initial load:", demo.demo_date, e);
+            return false; 
+          }
+        });
+        setFilteredDemos(initiallyFilteredDemos); // Set filtered demos with the initial filter applied
       }
     } catch (err) {
       console.error('Unexpected error loading demos:', err);
