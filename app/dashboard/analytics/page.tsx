@@ -294,7 +294,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-md">
             <CardHeader>
               <CardTitle>Demo Status Distribution</CardTitle>
             </CardHeader>
@@ -307,6 +307,7 @@ export default function AnalyticsPage() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
+                    innerRadius={60}
                     outerRadius={100}
                     label
                   >
