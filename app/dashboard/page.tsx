@@ -36,8 +36,8 @@ export default function Dashboard() {
   const menuRef = useRef<HTMLDivElement>(null);
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const router = useRouter();
-  const [currentMonth, setCurrentMonth] = useState('January');
-  const [currentYear, setCurrentYear] = useState(2024);
+  const [currentMonth, setCurrentMonth] = useState<string>(() => new Date().toLocaleString('default', { month: 'long' }));
+  const [currentYear, setCurrentYear] = useState<number>(() => new Date().getFullYear());
 
   // Close menu when clicking outside
   useEffect(() => {
